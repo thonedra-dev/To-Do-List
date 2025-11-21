@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register</title>
+    <link rel="stylesheet" href="static/css/register.css">
+</head>
+<body>
+    <div class="container">
+        <h1 class="title">Task Manager</h1>
+        
+        <form action="/register" method="POST" class="register-form">
+            <label for="username" class="label">Username:</label>
+            <input type="text" name="username" id="username" class="input-field" required>
+
+            <label for="position" class="label">Position:</label>
+            <input type="text" name="position" id="position" class="input-field" required>
+
+            <label for="age" class="label">Age:</label>
+            <input type="number" name="age" id="age" class="input-field" required>
+
+            <label for="gender" class="label">Gender:</label>
+            <select name="gender" id="gender" class="select-field" required>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+            </select>
+
+            <label for="password" class="label">Password:</label>
+            <input type="password" name="password" id="password" class="input-field" required>
+
+            <button type="submit" class="btn">Register</button>
+        </form>
+
+        <p class="redirect-text">Already have an account? <a href="/login" class="link">Login here</a></p>
+    </div>
+</body>
+</html>

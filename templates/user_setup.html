@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Setup - To-Do List</title>
+    <link rel="stylesheet" href="static/css/user_setup.css">
+
+    <script>
+        function toggleTable(tableId) {
+    var table = document.getElementById(tableId);
+
+    // Toggle visibility based on current state
+    if (table.style.display === "none" || table.style.display === "") {
+        table.style.display = "block"; // Show table
+    } else {
+        table.style.display = "none"; // Hide table
+    }
+}
+
+
+        function showTaskInput() {
+            document.getElementById("taskInputSection").style.display = "block";
+        }
+
+        function showDueDatePopupUI() {
+            document.getElementById("dueDatePopup").style.display = "block";
+        }
+
+        function closeDueDatePopup() {
+            document.getElementById("dueDatePopup").style.display = "none";
+        }
+
+        function submitTaskWithDueDate() {
+            document.getElementById("dueDatePopup").style.display = "none";
+            document.getElementById("stepSetupPopup").style.display = "block";
+        }
+
+        function submitTaskWithoutDueDate() {
+            document.getElementById("due_date").value = "";
+            document.getElementById("stepSetupPopup").style.display = "block";
+        }
+
+        function closeStepSetupPopup() {
+            document.getElementById("stepSetupPopup").style.display = "none";
+            document.getElementById("taskForm").submit();
+        }
+
+        function addStepToList() {
+            const stepDesc = document.getElementById("step_description").value;
+            const difficulty = document.getElementById("difficulty").value;
+            if (stepDesc.trim() !== "") {
+                const stepList = document.getElementById("stepList");
+                const listItem = document.createElement("li");
+                listItem.textContent = `${stepDesc} - (${difficulty})`;
+                stepList.appendChild(listItem);
+                
+                // Add hidden input fields to store step data for submission
+                const stepInput = document.createElement("input");
+                stepInput.type = "hidden";
+                stepInput.name = "steps[]";
+                stepInput.value = `${stepDesc}|${difficulty}`;
+                document.getElementById("taskForm").appendChild(stepInput);
+                
+                document.getElementById("step_description").value = "";
+            }
+        }
+
+        function updateTimeRemaining() {
+            const timeCells = document.querySelectorAll(".time-remaining");
+            const now = new Date();
+
+            timeCells.forEach(cell => {
+                const dueDateStr = cell.getAttribute("data-duedate");
+                if (!dueDateStr || dueDateStr === "None") {
+                    cell.innerHTML = "No Due Date";
+                    return;
+                }
+
+                const dueDate = new Date(dueDateStr);
+                const diffTime = dueDate - now;
+
+                if (diffTime < 0) {
+                    cell.innerHTML = "<span style='color: red;'>Overdue</span>";
+                } else {
+                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
+                    const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+                    const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
+                    cell.innerHTML = `${diffDays}d ${diffHours}h ${diffMinutes}m`;
+                }
+            });
+        }
+
+        setInterval(updateTimeRemaining, 1000);
+        updateTimeRemaining();
+    </script>
+
+   
+</head>
+<body>
+    <h1>TASK MANAGER</h1>
+    <h1 class="welcome-message">Welcome, {{ username }}!</h1>
+
+    
+   <!-- New Wrapper for the Whole Section -->
+<div class="task-section">
+    <!-- Titles (Inside the Wrapper but Outside task-options) -->
+    <h3 class="section-subtitle">STREAMLINE YOUR TASKS</h3>
+    <h2 class="section-title">Effortless management at your fingertips.</h2>
+
+    <!-- Existing Task Cards -->
+    <div class="task-options">
+        <!-- Add Task -->
+        <div class="task-card" onclick="showTaskInput()">
+            <img src="static/img/picaaa.png" alt="Add Task">
+            <h3>Add Task</h3>
+            <p>Create a new task and set steps.</p>
+        </div>
+
+        <!-- View Task List -->
+        <div class="task-card" onclick="toggleTable('taskTable')">
+            <img src="static/img/picbbb.png" alt="View Tasks">
+            <h3>View Task List</h3>
+            <p>Manage your ongoing tasks.</p>
+        </div>
+
+        <!-- View Completed Tasks -->
+        <div class="task-card" onclick="toggleTable('completedTable')">
+            <img src="static/img/pic3.png" alt="Completed Tasks">
+            <h3>View Completed Tasks</h3>
+            <p>See what you have achieved.</p>
+        </div>
+    </div>
+</div>
+
+
+     <!-- Task Input Section -->
+     <div id="taskInputSection" style="display: none;">
+        <form id="taskForm" action="/add_task" method="POST">
+            <input type="text" name="task" placeholder="Enter your task" required>
+            <input type="hidden" name="due_date" id="due_date">
+            <br>
+            <button type="button" onclick="showDueDatePopupUI()">Continue</button>
+        </form>
+    </div>
+
+
+    <!-- Due Date Setup Popup -->
+    <div id="dueDatePopup">
+        <h3>Would you like to set a due date for this task?</h3>
+        <input type="date" id="due_date_input" onchange="document.getElementById('due_date').value = this.value">
+        <br><br>
+        <button onclick="submitTaskWithDueDate()">Next: Set Steps</button>
+        <button onclick="submitTaskWithoutDueDate()">Skip Due Date, Set Steps</button>
+        <button onclick="closeDueDatePopup()">Cancel</button>
+    </div>
+
+    <!-- Step Setup Popup -->
+    <div id="stepSetupPopup">
+        <h3>Set Steps for This Task</h3>
+        <input type="text" id="step_description" placeholder="Enter step detail">
+        <select id="difficulty">
+            <option value="Easy">Easy</option>
+            <option value="Normal">Normal</option>
+            <option value="Hard">Hard</option>
+            <option value="Insane">Insane</option>
+        </select>
+        <button type="button" onclick="addStepToList()">Add Step</button>
+        <br>
+        <ul id="stepList"></ul>
+        <br>
+        <button onclick="closeStepSetupPopup()">Finish Task Setup</button>
+    </div>
+
+    <br><br>
+   
+   
+    <div class="table-container">
+    <table id="taskTable" border="1" style="display: none;">
+        <tr>
+            <th>No</th>
+            <th>Task</th>
+            <th>Created At</th>
+            <th>Setup Steps</th>
+            <th>Action</th>
+            <th>Due Date</th>
+            <th>Time Remaining</th>
+        </tr>
+        {% for task in tasks if task[2] == 0 %}  <!-- Only show incomplete tasks -->
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ task[1] }}</td>
+            <td>{{ task[3] }}</td>
+            <td>
+                <a href="/setup_step/{{ task[0] }}">Status</a>
+            </td>
+            <td>
+                {% if task[0] in tasks_with_unfinished_steps %}
+                    <button disabled>Steps Not Completed</button>
+                {% else %}
+                    <form action="/complete/{{ task[0] }}" method="POST">
+                        <button type="submit">Mark as Complete</button>
+                    </form>
+                {% endif %}
+            </td>
+            <td>
+                {% if task[4] and task[4] != "" %}
+                    {{ task[4] }}
+                {% else %}
+                    No Due Date
+                {% endif %}
+            </td>
+            <td class="time-remaining" data-duedate="{{ task[4] }}">{{ task[5] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+    </div>
+    
+    <br><br>
+
+    <table id="completedTable" class="completed-tasks-table" border="1" style="display: none;">
+
+        <tr>
+            <th>No</th>
+            <th>Task</th>
+            <th>Date Completed</th>
+        </tr>
+        {% for task in completed_tasks %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ task[0] }}</td>
+            <td>{{ task[1] }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+</body>
+</html>

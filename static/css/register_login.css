@@ -1,0 +1,162 @@
+/* 🌅 Sleek Light-Themed Gradient Background */
+/* 🌌 Updated Background Gradient with Motion */
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(135deg, #f1f2f6, #dcdde1, #e0e0e0);
+    background-size: 300% 300%;
+    animation: gradientBG 6s infinite alternate ease-in-out;
+    color: #212529;
+    text-align: center;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    overflow: hidden;
+}
+
+/* 🎭 Smooth Gradient Motion */
+@keyframes gradientBG {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* 🏆 Center the Title */
+h1 {
+    font-size: 32px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    margin-bottom: 20px;
+    animation: titleAnim 1.5s infinite alternate;
+    color: #333;
+}
+
+/* 🎭 Title Animation */
+@keyframes titleAnim {
+    0% { letter-spacing: 2px; transform: scale(1); }
+    100% { letter-spacing: 5px; transform: scale(1.05); }
+}
+
+/* 🏗 Form Container */
+/* 🏗 Updated Form Container Background */
+.form-container {
+    background: rgba(65, 58, 89, 0.9); /* Matches the container color in your screenshot */
+    padding: 20px;
+    border-radius: 12px;
+    width: 320px;
+    box-shadow: 0px 4px 15px rgba(0, 0, 0, 0.2);
+    transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+    display: flex;
+    flex-direction: column;
+    max-height: 350px;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #adb5bd #f8f9fa;
+    opacity: 0;
+    transform: translateY(30px);
+    animation: fadeInSlide 0.8s ease-out forwards;
+}
+
+/* 🌟 Form Hover Effect */
+.form-container:hover {
+    transform: scale(1.02);
+    box-shadow: 0px 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes fadeInSlide {
+    0% {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    100% {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* 🏷 Labels */
+label {
+    font-weight: bold;
+    display: block;
+    margin: 12px 0 5px;
+    color: #495057;
+}
+
+/* 📝 Input Fields */
+input, select {
+    width: 100%;
+    padding: 10px;
+    border: none;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: 0.3s;
+    background: rgba(255, 255, 255, 0.9);
+    color: #333;
+    border: 1px solid #ced4da;
+}
+
+/* 🔍 Input Focus Effect */
+input:focus, select:focus {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    outline: none;
+    border: 1px solid #adb5bd;
+}
+
+/* 📋 Dropdown Styling */
+select {
+    cursor: pointer;
+}
+
+/* ✨ Button Styles */
+button {
+    width: 50%;
+    margin: 0 auto;
+    padding: 12px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    font-weight: bold;
+    background: linear-gradient(90deg, #6c757d, #495057);
+    color: white;
+    cursor: pointer;
+    transition: 0.3s ease-in-out;
+    position: relative;
+    overflow: hidden;
+}
+
+/* 🔥 Button Hover Glow */
+button:hover {
+    background: linear-gradient(90deg, #495057, #343a40);
+    transform: scale(1.05);
+    box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* 🌀 Button Click Animation */
+button:active {
+    transform: scale(0.98);
+}
+
+/* 🔗 Links */
+a {
+    color: #6c757d;
+    text-decoration: none;
+    font-weight: bold;
+    transition: 0.3s;
+}
+
+a:hover {
+    text-decoration: underline;
+    color: #495057;
+}
+
+/* 📱 Mobile Responsive */
+@media (max-width: 400px) {
+    .form-container {
+        width: 90%;
+        padding: 20px;
+    }
+}

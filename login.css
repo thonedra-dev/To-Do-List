@@ -1,0 +1,103 @@
+/* Background gradient animation - each color holds longer */
+@keyframes bgAnimation {
+    0%, 25% { background-position: 0% 50%; }
+    50%, 75% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+body {
+    font-family: 'Poppins', sans-serif;
+    background: linear-gradient(45deg, #ff4b1f, #ff9068, #1fddff, #f72585);
+    background-size: 300% 300%;
+    animation: bgAnimation 15s infinite alternate; /* Increased time for longer color hold */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+}
+
+/* Glassmorphism effect */
+form {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.2);
+    width: 350px;
+    text-align: center;
+}
+
+/* Styling for input fields */
+input {
+    width: 90%;
+    padding: 10px;
+    margin: 10px 0;
+    border: none;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    color: #fff;
+    outline: none;
+    transition: all 0.3s ease-in-out;
+}
+
+input:focus {
+    background: rgba(255, 255, 255, 0.5);
+    transform: scale(1.05);
+}
+
+/* Button with hover effects */
+button {
+    background: linear-gradient(45deg, #6a0dad, #ff758c);
+    border: none;
+    padding: 12px 20px;
+    width: 70%;
+    font-size: 18px;
+    font-weight: bold;
+    color: white;
+    cursor: pointer;
+    border-radius: 25px;
+    transition: all 0.3s ease-in-out;
+}
+
+button:hover {
+    background: linear-gradient(45deg, #ff477e, #ff1843);
+    transform: scale(1.1);
+}
+
+/* Dynamic text color change based on gradient background */
+@keyframes textColorChange {
+    0%, 25% { color: white; }
+    50%, 75% { color: black; }
+    100% { color: white; }
+}
+
+
+
+/* Login title with glowing + color change + shrink-expand */
+h1 {
+    font-size: 2em;
+    text-transform: uppercase;
+    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+    animation: glow 1.5s infinite alternate, textColorChange 15s infinite alternate, shrinkExpand 3s infinite ease-in-out;
+    text-align: center;
+    letter-spacing: 4px; /* Adds space between each letter */
+}
+
+/* Twinkling glow effect */
+@keyframes glow {
+    from { text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
+    to { text-shadow: 0 0 20px rgba(255, 255, 255, 1); }
+}
+
+/* Hover effect on links */
+a {
+    color: #ff3e6b;
+    font-weight: bold;
+    transition: color 0.3s;
+    text-align: center;
+}
+
+a:hover {
+    color: #fff;
+}

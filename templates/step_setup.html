@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Step Overview - To-Do List</title>
+</head>
+<body>
+    <h1>Steps for Your Task</h1>
+
+    <p>Task: <strong>{{ task_name }}</strong></p>
+
+    <br>
+    <a href="/">Go Back</a>
+
+    <h2>Existing Steps</h2>
+    <table border="1">
+        <tr>
+            <th>No</th>
+            <th>Step</th>
+            <th>Difficulty</th>
+            <th>Action</th>
+        </tr>
+        {% for step in steps %}
+        <tr>
+            <td>{{ loop.index }}</td>
+            <td>{{ step[2] }}</td>  <!-- Fetch Step Detail -->
+            <td>{{ step[3] }}</td>  <!-- Fetch Difficulty Level -->
+            <td>
+                {% if step[4] == 0 %}  <!-- If step is not completed -->
+                    <form action="/complete_step/{{ step[0] }}" method="POST">
+                        <button type="submit">Mark as Complete</button>
+                    </form>
+                {% else %}
+                    ✅ Completed
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </table>
+
+</body>
+</html>

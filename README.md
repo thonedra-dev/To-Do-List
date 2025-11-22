@@ -37,6 +37,8 @@ List: the finished tasks with their dates and detailed infos.
 ### When mark as complete, it will generate a kind of reflection and review on, how the user had surpassed this task. Durations, efficiency and rating are given. 
 
 
+
+### 👥 Author
 #### Name  - thonedra
 #### Email - thonedra.dev@gmail.com
 #### Phone - 0182128530

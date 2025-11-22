@@ -1,6 +1,24 @@
 # TO DO LIST APP
 A full-stack web application for task management with user authentication, task breakdown into steps, and performance feedback.
 
+
+## 🛠️ Tech Stack
+
+Frontend: HTML5, CSS3, JavaScript
+Backend: Python, Flask, Jinja2
+Database: MySQL
+Authentication: Flask Sessions
+
+## 🚀 Features
+
+User registration & login
+Create tasks with due dates
+Break tasks into steps with difficulty levels
+Mark tasks/steps as complete
+Performance feedback based on completion time
+Responsive design
+
+
 ## Application Screenshots
 ![login.png](login.png)
 The user will login here, the color theme is like, two gradient colors switching one after another.
@@ -18,7 +36,7 @@ List: the finished tasks with their dates and detailed infos.
 ![.png](feedback.png)
 ### When mark as complete, it will generate a kind of reflection and review on, how the user had surpassed this task. Durations, efficiency and rating are given. 
 
-## 👥 Author
+### 👥 Author
 Name  - thonedra
 Email - thonedra.dev@gmail.com
 Phone - 0182128530

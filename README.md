@@ -12,12 +12,10 @@ ADD: a particular task by defining the due date, deathline and smaller steps or 
 Watch: the remaining tasks need to be completed in upcoming period.
 List: the finished tasks with their dates and detailed infos.
 
-
+![step.png](steps.png)
 ### When defining a particular task, we can add steps based on their difficulty( optional ) and a task with steps need to complete all those steps first. Otherwise, the button is disabled.
 
-
-
-
+![.png](feedback.png)
 ### When mark as complete, it will generate a kind of reflection and review on, how the user had surpassed this task. Durations, efficiency and rating are given. 
 
 

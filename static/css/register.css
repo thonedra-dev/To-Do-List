@@ -1,106 +1,350 @@
-/* Background gradient animation - each color holds longer */
-@keyframes bgAnimation {
-    0%, 25% { background-position: 0% 50%; }
-    50%, 75% { background-position: 100% 50%; }
-    100% { background-position: 0% 50%; }
+:root {
+    --bg-gradient-dark: linear-gradient(135deg, #667eea 0%, #764ba2 25%, #f093fb 50%, #4facfe 75%, #00f2fe 100%);
+    --bg-gradient-light: linear-gradient(135deg, #a8edea 0%, #fed6e3 25%, #a6c1ee 50%, #fbc2eb 75%, #f8b500 100%);
+    --glass-bg-dark: rgba(17, 25, 40, 0.75);
+    --glass-bg-light: rgba(255, 255, 255, 0.25);
+    --glass-border-dark: rgba(255, 255, 255, 0.18);
+    --glass-border-light: rgba(255, 255, 255, 0.5);
+    --text-primary-dark: #ffffff;
+    --text-primary-light: #1a202c;
+    --input-bg-dark: rgba(255, 255, 255, 0.1);
+    --input-bg-light: rgba(255, 255, 255, 0.6);
+    --shadow-color-dark: rgba(0, 0, 0, 0.3);
+    --shadow-color-light: rgba(0, 0, 0, 0.1);
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    font-family: 'Poppins', sans-serif;
-    background: linear-gradient(45deg, #ff4b1f, #ff9068, #1fddff, #f72585);
-    background-size: 300% 300%;
-    animation: bgAnimation 15s infinite alternate; /* Matches login.css */
+    font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-gradient-dark);
+    background-size: 400% 400%;
+    animation: gradientShift 15s ease infinite;
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
-    margin: 0;
+    min-height: 100vh;
+    position: relative;
+    overflow: hidden;
+    transition: all 0.3s ease;
 }
 
-/* Glassmorphism effect */
-form {
-    background: rgba(255, 255, 255, 0.1);
+body.light-mode {
+    background: var(--bg-gradient-light);
+}
+
+/* Animated background particles */
+body::before {
+    content: '';
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    background-image: 
+        radial-gradient(circle at 20% 50%, rgba(255, 255, 255, 0.1) 0%, transparent 50%),
+        radial-gradient(circle at 80% 80%, rgba(255, 255, 255, 0.1) 0%, transparent 50%);
+    animation: float 20s ease-in-out infinite;
+}
+
+@keyframes gradientShift {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes float {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    50% { transform: translate(-50px, -50px) rotate(180deg); }
+}
+
+/* Theme toggle button */
+.theme-toggle {
+    position: absolute;
+    top: 30px;
+    right: 30px;
+    background: var(--glass-bg-dark);
+    border: 1px solid var(--glass-border-dark);
     backdrop-filter: blur(10px);
-    padding: 30px;
-    border-radius: 15px;
-    box-shadow: 0px 0px 10px rgba(255, 255, 255, 0.2);
-    width: 400px;
-    text-align: center;
-}
-
-input, select {
-    width: 90%;
-    padding: 10px;
-    margin: 10px 0;
-    border: none;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.2);
-    color: black; /* Ensure all text inside inputs is black */
-    outline: none;
-    transition: all 0.3s ease-in-out;
-}
-
-
-input:focus, select:focus {
-    background: rgba(255, 255, 255, 0.5);
-    transform: scale(1.05);
-}
-
-
-
-button {
-    background: linear-gradient(45deg, #6a0dad, #ff758c);
-    border: none;
+    border-radius: 50px;
     padding: 12px 20px;
-    width: 70%;
-    font-size: 18px;
-    font-weight: bold;
-    color: white;
     cursor: pointer;
-    border-radius: 25px;
-    transition: all 0.3s ease-in-out;
-    animation: buttonColorChange 15s infinite alternate;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary-dark);
+    font-weight: 600;
+    box-shadow: 0 8px 32px var(--shadow-color-dark);
 }
 
-button:hover {
-    background: linear-gradient(45deg, #ff477e, #ff1843);
-    transform: scale(1.1);
+body.light-mode .theme-toggle {
+    background: var(--glass-bg-light);
+    border: 1px solid var(--glass-border-light);
+    color: var(--text-primary-light);
 }
 
-/* Dynamic text color change based on gradient background */
-@keyframes textColorChange {
-    0%, 25% { color: white; }
-    50%, 75% { color: black; }
-    100% { color: white; }
+.theme-toggle:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 12px 40px var(--shadow-color-dark);
 }
 
+.theme-toggle::before {
+    content: '🌙';
+    font-size: 20px;
+}
 
+body.light-mode .theme-toggle::before {
+    content: '☀️';
+}
 
-/* Register title with glowing + color change + shrink-expand */
-h1 {
-    font-size: 2em;
+/* Container with glassmorphism */
+.container {
+    background: var(--glass-bg-dark);
+    backdrop-filter: blur(20px) saturate(180%);
+    border: 1px solid var(--glass-border-dark);
+    padding: 50px 40px;
+    border-radius: 30px;
+    box-shadow: 0 25px 70px var(--shadow-color-dark);
+    width: 480px;
+    position: relative;
+    z-index: 10;
+    animation: slideIn 0.6s ease-out;
+    transition: all 0.3s ease;
+}
+
+body.light-mode .container {
+    background: var(--glass-bg-light);
+    border: 1px solid var(--glass-border-light);
+}
+
+@keyframes slideIn {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.container:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 30px 80px var(--shadow-color-dark);
+}
+
+/* Title styling */
+.title {
+    font-size: 2.5em;
+    font-weight: 800;
     text-transform: uppercase;
-    text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
-    animation: glow 1.5s infinite alternate, textColorChange 15s infinite alternate, shrinkExpand 3s infinite ease-in-out;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     text-align: center;
-    letter-spacing: 4px; /* Adds space between each letter */
+    margin-bottom: 40px;
+    letter-spacing: 3px;
+    animation: glow 2s ease-in-out infinite;
+    position: relative;
 }
 
+body.light-mode .title {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
 
-/* Twinkling glow effect */
+.title::after {
+    content: '';
+    position: absolute;
+    bottom: -10px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 80px;
+    height: 4px;
+    background: linear-gradient(90deg, #667eea, #764ba2);
+    border-radius: 2px;
+    animation: expandWidth 2s ease-in-out infinite;
+}
+
 @keyframes glow {
-    from { text-shadow: 0 0 5px rgba(255, 255, 255, 0.5); }
-    to { text-shadow: 0 0 20px rgba(255, 255, 255, 1); }
+    0%, 100% { filter: drop-shadow(0 0 10px rgba(102, 126, 234, 0.5)); }
+    50% { filter: drop-shadow(0 0 20px rgba(118, 75, 162, 0.8)); }
 }
 
-/* Hover effect on links */
-a {
-    color: #ff3e6b;
-    font-weight: bold;
-    transition: color 0.3s;
+@keyframes expandWidth {
+    0%, 100% { width: 80px; }
+    50% { width: 120px; }
+}
+
+/* Form styling */
+.register-form {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+.label {
+    color: var(--text-primary-dark);
+    font-weight: 600;
+    margin-bottom: 8px;
+    font-size: 0.95em;
+    letter-spacing: 0.5px;
+    display: block;
+}
+
+body.light-mode .label {
+    color: var(--text-primary-light);
+}
+
+.input-field, .select-field {
+    width: 100%;
+    padding: 15px 20px;
+    border: 2px solid transparent;
+    border-radius: 15px;
+    background: var(--input-bg-dark);
+    color: var(--text-primary-dark);
+    font-size: 1em;
+    outline: none;
+    transition: all 0.3s ease;
+    backdrop-filter: blur(10px);
+}
+
+body.light-mode .input-field,
+body.light-mode .select-field {
+    background: var(--input-bg-light);
+    color: var(--text-primary-light);
+}
+
+.select-field option {
+    background: rgba(17, 25, 40, 0.95);
+    color: var(--text-primary-dark);
+}
+
+body.light-mode .select-field option {
+    background: rgba(255, 255, 255, 0.95);
+    color: var(--text-primary-light);
+}
+
+.input-field::placeholder {
+    color: rgba(255, 255, 255, 0.5);
+}
+
+body.light-mode .input-field::placeholder {
+    color: rgba(0, 0, 0, 0.4);
+}
+
+.input-field:focus,
+.select-field:focus {
+    background: rgba(255, 255, 255, 0.2);
+    border: 2px solid #667eea;
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+}
+
+/* Button styling */
+.btn {
+    width: 100%;
+    padding: 15px 30px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    border-radius: 15px;
+    color: white;
+    font-size: 1.1em;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.btn::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.3), transparent);
+    transition: left 0.5s ease;
+}
+
+.btn:hover::before {
+    left: 100%;
+}
+
+.btn:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 15px 35px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
+}
+
+.btn:active {
+    transform: translateY(-1px);
+}
+
+/* Redirect text styling */
+.redirect-text {
     text-align: center;
+    margin-top: 25px;
+    color: var(--text-primary-dark);
+    font-size: 0.95em;
 }
 
-a:hover {
-    color: #fff;
+body.light-mode .redirect-text {
+    color: var(--text-primary-light);
+}
+
+.link {
+    color: #667eea;
+    text-decoration: none;
+    font-weight: 700;
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.link::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: #667eea;
+    transition: width 0.3s ease;
+}
+
+.link:hover {
+    color: #764ba2;
+}
+
+.link:hover::after {
+    width: 100%;
+}
+
+/* Responsive design */
+@media (max-width: 520px) {
+    .container {
+        width: 90%;
+        padding: 40px 30px;
+    }
+    
+    .title {
+        font-size: 2em;
+    }
+    
+    .theme-toggle {
+        top: 20px;
+        right: 20px;
+        padding: 10px 15px;
+        font-size: 0.9em;
+    }
 }

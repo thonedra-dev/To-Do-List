@@ -73,9 +73,9 @@ def index():
     cursor.close()
     connection.close()
 
-    # ✅ Pass everything to `user_setup.html`
+    # ✅ Pass everything to `homepage.html`
     return render_template(
-        'user_setup.html', 
+        'homepage.html', 
         username=username,
         tasks=tasks_with_remaining_time,  # Now includes `time_remaining`
         completed_tasks=completed_tasks,

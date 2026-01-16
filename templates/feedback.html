@@ -3,18 +3,92 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Feedback - Task Completion</title>
+    <title>Task Completion - Feedback</title>
+    <link rel="stylesheet" href="/static/css/feedback.css">
 </head>
 <body>
-    <h1>Task Completion Feedback</h1>
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <span>Theme</span>
+    </div>
 
-    <p><strong>Task Started At:</strong> {{ created_at }}</p>
-    <p><strong>Task Completed At:</strong> {{ completed_at }}</p>
-    <p><strong>Time Taken:</strong> {{ time_difference|round(2) }} hours</p>
+    <div class="main-container">
+        <div class="feedback-card">
+            <div class="celebration-icon">🎉</div>
+            <h1 class="page-title">Task Completed!</h1>
+            <p class="subtitle">Great job on finishing your task!</p>
 
-    <h2>Performance: {{ rating }} {{ icon }}</h2>
+            <div class="info-grid">
+                <div class="info-item">
+                    <div class="info-label">🕐 Started At</div>
+                    <div class="info-value">{{ created_at }}</div>
+                </div>
 
-    <br>
-    <a href="/">Go Back to Tasks</a>
+                <div class="info-item">
+                    <div class="info-label">✅ Completed At</div>
+                    <div class="info-value">{{ completed_at }}</div>
+                </div>
+
+                <div class="info-item full-width">
+                    <div class="info-label">⏱️ Time Taken</div>
+                    <div class="info-value highlight">{{ time_difference|round(2) }} hours</div>
+                </div>
+            </div>
+
+            <div class="performance-section">
+                <h2 class="performance-title">Performance Rating</h2>
+                <div class="performance-badge">
+                    <span class="rating-icon">{{ icon }}</span>
+                    <span class="rating-text">{{ rating }}</span>
+                </div>
+            </div>
+
+            <div class="actions">
+                <a href="/" class="btn-primary">← Back to Dashboard</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            if (document.body.classList.contains('light-mode')) {
+                localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+
+            // Add celebration animation
+            setTimeout(() => {
+                createConfetti();
+            }, 500);
+        });
+
+        // Confetti animation
+        function createConfetti() {
+            const colors = ['#667eea', '#764ba2', '#f093fb', '#4facfe'];
+            for (let i = 0; i < 50; i++) {
+                setTimeout(() => {
+                    const confetti = document.createElement('div');
+                    confetti.className = 'confetti';
+                    confetti.style.left = Math.random() * 100 + '%';
+                    confetti.style.animationDelay = Math.random() * 3 + 's';
+                    confetti.style.background = colors[Math.floor(Math.random() * colors.length)];
+                    document.body.appendChild(confetti);
+
+                    setTimeout(() => confetti.remove(), 5000);
+                }, i * 30);
+            }
+        }
+    </script>
 </body>
 </html>

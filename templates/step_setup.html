@@ -3,41 +3,74 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Step Overview - To-Do List</title>
+    <title>Step Overview - Task Manager</title>
+    <link rel="stylesheet" href="/static/css/step_setup.css">
 </head>
 <body>
-    <h1>Steps for Your Task</h1>
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <span>Theme</span>
+    </div>
 
-    <p>Task: <strong>{{ task_name }}</strong></p>
+    <div class="main-container">
+        <div class="page-header">
+            <h1 class="page-title">📋 Step Overview</h1>
+            <p class="task-name">Task: <strong>{{ task_name }}</strong></p>
+        </div>
 
-    <br>
-    <a href="/">Go Back</a>
+        <div class="actions">
+            <a href="/" class="btn-secondary">← Go Back</a>
+        </div>
 
-    <h2>Existing Steps</h2>
-    <table border="1">
-        <tr>
-            <th>No</th>
-            <th>Step</th>
-            <th>Difficulty</th>
-            <th>Action</th>
-        </tr>
-        {% for step in steps %}
-        <tr>
-            <td>{{ loop.index }}</td>
-            <td>{{ step[2] }}</td>  <!-- Fetch Step Detail -->
-            <td>{{ step[3] }}</td>  <!-- Fetch Difficulty Level -->
-            <td>
-                {% if step[4] == 0 %}  <!-- If step is not completed -->
-                    <form action="/complete_step/{{ step[0] }}" method="POST">
-                        <button type="submit">Mark as Complete</button>
-                    </form>
-                {% else %}
-                    ✅ Completed
-                {% endif %}
-            </td>
-        </tr>
-        {% endfor %}
-    </table>
+        <div class="steps-container">
+            <h2 class="section-title">🎯 Task Steps</h2>
+            
+            <div class="steps-grid">
+                {% for step in steps %}
+                <div class="step-card {% if step[4] == 1 %}completed{% endif %}">
+                    <div class="step-number">{{ loop.index }}</div>
+                    <div class="step-content">
+                        <h3 class="step-detail">{{ step[2] }}</h3>
+                        <div class="step-meta">
+                            <span class="difficulty-badge difficulty-{{ step[3]|lower }}">
+                                {% if step[3] == 'Easy' %}😊{% elif step[3] == 'Normal' %}😐{% elif step[3] == 'Hard' %}😰{% else %}🔥{% endif %}
+                                {{ step[3] }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="step-action">
+                        {% if step[4] == 0 %}
+                            <form action="/complete_step/{{ step[0] }}" method="POST">
+                                <button type="submit" class="btn-complete">✓ Complete</button>
+                            </form>
+                        {% else %}
+                            <div class="completed-badge">✅ Completed</div>
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
 
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            if (document.body.classList.contains('light-mode')) {
+                localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+        });
+    </script>
 </body>
 </html>

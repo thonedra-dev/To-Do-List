@@ -3,37 +3,75 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Register</title>
+    <title>Register - Task Manager</title>
     <link rel="stylesheet" href="static/css/register.css">
 </head>
 <body>
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <span>Theme</span>
+    </div>
+
     <div class="container">
-        <h1 class="title">Task Manager</h1>
+        <h1 class="title">📝 Task Manager</h1>
         
         <form action="/register" method="POST" class="register-form">
-            <label for="username" class="label">Username:</label>
-            <input type="text" name="username" id="username" class="input-field" required>
+            <div>
+                <label for="username" class="label">👤 Username</label>
+                <input type="text" name="username" id="username" class="input-field" placeholder="Choose a username" required>
+            </div>
 
-            <label for="position" class="label">Position:</label>
-            <input type="text" name="position" id="position" class="input-field" required>
+            <div>
+                <label for="position" class="label">💼 Position</label>
+                <input type="text" name="position" id="position" class="input-field" placeholder="Your job position" required>
+            </div>
 
-            <label for="age" class="label">Age:</label>
-            <input type="number" name="age" id="age" class="input-field" required>
+            <div>
+                <label for="age" class="label">🎂 Age</label>
+                <input type="number" name="age" id="age" class="input-field" placeholder="Your age" required>
+            </div>
 
-            <label for="gender" class="label">Gender:</label>
-            <select name="gender" id="gender" class="select-field" required>
-                <option value="Male">Male</option>
-                <option value="Female">Female</option>
-                <option value="Other">Other</option>
-            </select>
+            <div>
+                <label for="gender" class="label">⚧️ Gender</label>
+                <select name="gender" id="gender" class="select-field" required>
+                    <option value="">Select your gender</option>
+                    <option value="Male">Male</option>
+                    <option value="Female">Female</option>
+                    <option value="Other">Other</option>
+                </select>
+            </div>
 
-            <label for="password" class="label">Password:</label>
-            <input type="password" name="password" id="password" class="input-field" required>
+            <div>
+                <label for="password" class="label">🔒 Password</label>
+                <input type="password" name="password" id="password" class="input-field" placeholder="Create a password" required>
+            </div>
 
-            <button type="submit" class="btn">Register</button>
+            <button type="submit" class="btn">🚀 Register</button>
         </form>
 
         <p class="redirect-text">Already have an account? <a href="/login" class="link">Login here</a></p>
     </div>
+
+    <script>
+        // Theme toggle functionality
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            
+            // Save theme preference to localStorage
+            if (document.body.classList.contains('light-mode')) {
+                localStorage.setItem('theme', 'light');
+            } else {
+                localStorage.setItem('theme', 'dark');
+            }
+        }
+
+        // Load saved theme on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') {
+                document.body.classList.add('light-mode');
+            }
+        });
+    </script>
 </body>
 </html>

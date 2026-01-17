@@ -15,139 +15,123 @@
     <div class="main-container">
         <!-- Header -->
         <div class="page-header">
-            <h1 class="page-title">⚡ TASK MANAGER</h1>
+            <h1 class="page-title">Task Manager</h1>
+            <p class="page-subtitle">Into the organized</p>
             <h2 class="welcome-message">Welcome back, {{ username }}! 👋</h2>
         </div>
 
         <!-- Task Section -->
         <div class="task-section">
-            <h3 class="section-subtitle">🎯 STREAMLINE YOUR TASKS</h3>
-            <h2 class="section-title">Effortless management at your fingertips.</h2>
-
             <!-- Task Cards -->
             <div class="task-options">
                 <!-- Add Task -->
-                <div class="task-card" onclick="showTaskInput()">
-                    <img src="static/img/picaaa.png" alt="Add Task">
-                    <h3>➕ Add Task</h3>
+                <div class="task-card" onclick="showTaskPopup()">
+                    <div class="card-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <line x1="12" y1="8" x2="12" y2="16"></line>
+                            <line x1="8" y1="12" x2="16" y2="12"></line>
+                        </svg>
+                    </div>
+                    <h3>Add Task</h3>
                     <p>Create a new task and set steps</p>
                 </div>
 
                 <!-- View Task List -->
-                <div class="task-card" onclick="toggleTable('taskTable')">
-                    <img src="static/img/picbbb.png" alt="View Tasks">
-                    <h3>📋 View Task List</h3>
-                    <p>Manage your ongoing tasks</p>
-                </div>
+                <a href="/task_details?table=tasks" class="task-card-link">
+                    <div class="task-card">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
+                                <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
+                                <line x1="9" y1="12" x2="15" y2="12"></line>
+                                <line x1="9" y1="16" x2="15" y2="16"></line>
+                            </svg>
+                        </div>
+                        <h3>View Task List</h3>
+                        <p>Manage your ongoing tasks</p>
+                    </div>
+                </a>
 
                 <!-- View Completed Tasks -->
-                <div class="task-card" onclick="toggleTable('completedTable')">
-                    <img src="static/img/pic3.png" alt="Completed Tasks">
-                    <h3>✅ View Completed Tasks</h3>
-                    <p>See what you have achieved</p>
-                </div>
+                <a href="/task_details?table=completed" class="task-card-link">
+                    <div class="task-card">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
+                                <polyline points="22 4 12 14.01 9 11.01"></polyline>
+                            </svg>
+                        </div>
+                        <h3>View Completed Tasks</h3>
+                        <p>See what you have achieved</p>
+                    </div>
+                </a>
             </div>
         </div>
 
-        <!-- Task Input Section -->
-        <div id="taskInputSection" style="display: none;">
+        <!-- Task Input Popup (First Step) -->
+        <div id="taskInputPopup">
+            <div class="popup-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M12 20h9"></path>
+                    <path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                </svg>
+                <h3>Create New Task</h3>
+            </div>
             <form id="taskForm" action="/add_task" method="POST">
-                <input type="text" name="task" placeholder="✏️ Enter your task..." required>
+                <input type="text" name="task" id="task_name" placeholder="Enter your task..." required>
                 <input type="hidden" name="due_date" id="due_date">
-                <button type="button" onclick="showDueDatePopupUI()">Continue →</button>
+                <div class="popup-buttons">
+                    <button type="button" class="btn-secondary" onclick="closeTaskPopup()">Cancel</button>
+                    <button type="button" class="btn-primary" onclick="showDueDatePopupUI()">Continue</button>
+                </div>
             </form>
         </div>
 
         <!-- Due Date Setup Popup -->
         <div id="dueDatePopup">
-            <h3>📅 Set a Due Date?</h3>
+            <div class="popup-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                    <line x1="16" y1="2" x2="16" y2="6"></line>
+                    <line x1="8" y1="2" x2="8" y2="6"></line>
+                    <line x1="3" y1="10" x2="21" y2="10"></line>
+                </svg>
+                <h3>Set a Due Date</h3>
+            </div>
             <input type="date" id="due_date_input" onchange="document.getElementById('due_date').value = this.value">
-            <button onclick="submitTaskWithDueDate()">Next: Set Steps →</button>
-            <button onclick="submitTaskWithoutDueDate()">Skip Due Date</button>
-            <button onclick="closeDueDatePopup()">Cancel</button>
+            <div class="popup-buttons">
+                <button type="button" class="btn-secondary" onclick="submitTaskWithoutDueDate()">Skip</button>
+                <button type="button" class="btn-primary" onclick="submitTaskWithDueDate()">Next: Set Steps</button>
+            </div>
         </div>
 
         <!-- Step Setup Popup -->
         <div id="stepSetupPopup">
-            <h3>🎯 Set Steps for This Task</h3>
+            <div class="popup-header">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                </svg>
+                <h3>Set Steps for This Task</h3>
+            </div>
             <input type="text" id="step_description" placeholder="Enter step detail...">
             <select id="difficulty">
-                <option value="Easy">😊 Easy</option>
-                <option value="Normal">😐 Normal</option>
-                <option value="Hard">😰 Hard</option>
-                <option value="Insane">🔥 Insane</option>
+                <option value="Easy">Easy - Simple task</option>
+                <option value="Normal">Normal - Moderate effort</option>
+                <option value="Hard">Hard - Challenging</option>
+                <option value="Insane">Insane - Very difficult</option>
             </select>
-            <button type="button" onclick="addStepToList()">➕ Add Step</button>
+            <button type="button" class="btn-add" onclick="addStepToList()">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                Add Step
+            </button>
             <ul id="stepList"></ul>
-            <button onclick="closeStepSetupPopup()">✅ Finish Task Setup</button>
-        </div>
-
-        <!-- Task Table -->
-        <div class="table-container" style="display: none;" id="taskTableContainer">
-            <table id="taskTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Task</th>
-                        <th>Created At</th>
-                        <th>Steps</th>
-                        <th>Action</th>
-                        <th>Due Date</th>
-                        <th>Time Left</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for task in tasks if task[2] == 0 %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>{{ task[1] }}</td>
-                        <td>{{ task[3] }}</td>
-                        <td>
-                            <a href="/setup_step/{{ task[0] }}">📊 Status</a>
-                        </td>
-                        <td>
-                            {% if task[0] in tasks_with_unfinished_steps %}
-                                <button disabled>⏳ Steps Not Completed</button>
-                            {% else %}
-                                <form action="/complete/{{ task[0] }}" method="POST" style="display:inline;">
-                                    <button type="submit">✓ Mark Complete</button>
-                                </form>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if task[4] and task[4] != "" %}
-                                {{ task[4] }}
-                            {% else %}
-                                No Due Date
-                            {% endif %}
-                        </td>
-                        <td class="time-remaining" data-duedate="{{ task[4] }}">{{ task[5] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
-        </div>
-
-        <!-- Completed Tasks Table -->
-        <div class="table-container" style="display: none;" id="completedTableContainer">
-            <table id="completedTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Task</th>
-                        <th>Date Completed</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for task in completed_tasks %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td>{{ task[0] }}</td>
-                        <td>{{ task[1] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <div class="popup-buttons">
+                <button type="button" class="btn-primary" onclick="closeStepSetupPopup()">Finish Task Setup</button>
+            </div>
         </div>
     </div>
 
@@ -170,24 +154,22 @@
             }
         });
 
-        // Toggle table visibility
-        function toggleTable(tableId) {
-            const table = document.getElementById(tableId);
-            const container = document.getElementById(tableId + 'Container');
-            
-            if (container.style.display === "none" || container.style.display === "") {
-                container.style.display = "block";
-            } else {
-                container.style.display = "none";
-            }
+        function showTaskPopup() {
+            document.getElementById("taskInputPopup").style.display = "block";
         }
 
-        function showTaskInput() {
-            document.getElementById("taskInputSection").style.display = "block";
-            document.getElementById("taskInputSection").scrollIntoView({ behavior: 'smooth' });
+        function closeTaskPopup() {
+            document.getElementById("taskInputPopup").style.display = "none";
+            document.getElementById("task_name").value = "";
         }
 
         function showDueDatePopupUI() {
+            const taskName = document.getElementById("task_name").value;
+            if (taskName.trim() === "") {
+                alert("Please enter a task name first");
+                return;
+            }
+            document.getElementById("taskInputPopup").style.display = "none";
             document.getElementById("dueDatePopup").style.display = "block";
         }
 
@@ -219,16 +201,16 @@
                 const stepList = document.getElementById("stepList");
                 const listItem = document.createElement("li");
                 
-                // Add emoji based on difficulty
-                let emoji = '';
+                // Add icon based on difficulty
+                let icon = '';
                 switch(difficulty) {
-                    case 'Easy': emoji = '😊'; break;
-                    case 'Normal': emoji = '😐'; break;
-                    case 'Hard': emoji = '😰'; break;
-                    case 'Insane': emoji = '🔥'; break;
+                    case 'Easy': icon = '<span class="step-badge easy">Easy</span>'; break;
+                    case 'Normal': icon = '<span class="step-badge normal">Normal</span>'; break;
+                    case 'Hard': icon = '<span class="step-badge hard">Hard</span>'; break;
+                    case 'Insane': icon = '<span class="step-badge insane">Insane</span>'; break;
                 }
                 
-                listItem.textContent = `${emoji} ${stepDesc} - (${difficulty})`;
+                listItem.innerHTML = `<span class="step-text">${stepDesc}</span> ${icon}`;
                 stepList.appendChild(listItem);
                 
                 const stepInput = document.createElement("input");
@@ -240,35 +222,6 @@
                 document.getElementById("step_description").value = "";
             }
         }
-
-        function updateTimeRemaining() {
-            const timeCells = document.querySelectorAll(".time-remaining");
-            const now = new Date();
-
-            timeCells.forEach(cell => {
-                const dueDateStr = cell.getAttribute("data-duedate");
-                if (!dueDateStr || dueDateStr === "None") {
-                    cell.innerHTML = "No Due Date";
-                    return;
-                }
-
-                const dueDate = new Date(dueDateStr);
-                const diffTime = dueDate - now;
-
-                if (diffTime < 0) {
-                    cell.innerHTML = "<span style='color: #ef4444; font-weight: 700;'>⚠️ Overdue</span>";
-                    cell.setAttribute("data-duedate", "Overdue");
-                } else {
-                    const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                    const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-                    const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
-                    cell.innerHTML = `⏰ ${diffDays}d ${diffHours}h ${diffMinutes}m`;
-                }
-            });
-        }
-
-        setInterval(updateTimeRemaining, 1000);
-        updateTimeRemaining();
     </script>
 </body>
 </html>

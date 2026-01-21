@@ -34,6 +34,29 @@ def index():
     user = cursor.fetchone()
     username = user[0] if user else "Unknown"
 
+    cursor.close()
+    connection.close()
+
+    # Only pass username to homepage, not the task data
+    return render_template('homepage.html', username=username)
+
+
+@app.route('/task_details')
+def task_details():
+    if 'user_id' not in session:
+        return redirect('/login')
+
+    user_id = session['user_id']
+    table_type = request.args.get('table', 'tasks')  # Get which table to show
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Fetch the logged-in user's username
+    cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+    user = cursor.fetchone()
+    username = user[0] if user else "Unknown"
+
     # Fetch tasks assigned to the logged-in user, including due_date
     cursor.execute("SELECT id, task, completed, created_at, due_date FROM tasks WHERE user_id = %s", (user_id,))
     tasks = cursor.fetchall()
@@ -73,13 +96,14 @@ def index():
     cursor.close()
     connection.close()
 
-    # ✅ Pass everything to `homepage.html`
+    # ✅ Pass everything to `task_details.html`
     return render_template(
-        'homepage.html', 
+        'task_details.html', 
         username=username,
-        tasks=tasks_with_remaining_time,  # Now includes `time_remaining`
+        tasks=tasks_with_remaining_time,
         completed_tasks=completed_tasks,
-        tasks_with_unfinished_steps=tasks_with_unfinished_steps
+        tasks_with_unfinished_steps=tasks_with_unfinished_steps,
+        table_type=table_type  # Pass which table to show
     )
 
 
@@ -123,8 +147,6 @@ def add_task():
     connection.close()
 
     return redirect('/')
-
-
 
 
 # ✅ Place the new "Mark as Complete" route right here

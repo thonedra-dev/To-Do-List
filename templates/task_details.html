@@ -51,49 +51,50 @@
                     <path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"></path>
                     <rect x="8" y="2" width="8" height="4" rx="1" ry="1"></rect>
                 </svg>
-                <h3>Your Ongoing Tasks</h3>
+                <h3>Ongoing Tasks</h3>
             </div>
-            <table id="taskTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Task</th>
-                        <th>Task Info</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for task in tasks if task[2] == 0 %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td class="task-name-cell">
-                            <span class="task-name" data-full-text="{{ task[1] }}">{{ task[1] }}</span>
-                            {% if task[1]|length > 80 %}
-                                <span class="task-expand" onclick="showFullTaskPopup('{{ task[1] }}')">...</span>
-                            {% endif %}
-                        </td>
-                        <td class="task-info-cell">
-                            <button class="info-btn" onclick="showTaskInfoPopup({{ loop.index0 }})">
-                                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <circle cx="12" cy="12" r="10"></circle>
-                                    <line x1="12" y1="16" x2="12" y2="12"></line>
-                                    <line x1="12" y1="8" x2="12.01" y2="8"></line>
-                                </svg>
-                                Details
-                            </button>
-                            <!-- Hidden data for popup -->
-                            <div class="task-data" style="display: none;"
-                                 data-task-id="{{ task[0] }}"
-                                 data-task-name="{{ task[1] }}"
-                                 data-created-at="{{ task[3] }}"
-                                 data-due-date="{% if task[4] and task[4] != '' %}{{ task[4] }}{% else %}No Due Date{% endif %}"
-                                 data-time-left="{{ task[5] }}"
-                                 data-has-unfinished-steps="{% if task[0] in tasks_with_unfinished_steps %}true{% else %}false{% endif %}">
-                            </div>
-                        </td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+            <table id="taskTable" class="task-table task-table--active">
+  <thead>
+    <tr>
+      <th class="col-no">No</th>
+      <th class="col-task">Task</th>
+      <th class="col-info">Task Info</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in tasks if task[2] == 0 %}
+    <tr>
+      <td class="col-no">{{ loop.index }}</td>
+      <td class="task-name-cell col-task">
+        <span class="task-name" data-full-text="{{ task[1] }}">{{ task[1] }}</span>
+        {% if task[1]|length > 80 %}
+          <span class="task-expand" onclick="showFullTaskPopup('{{ task[1] }}')">...</span>
+        {% endif %}
+      </td>
+      <td class="task-info-cell col-info">
+        <button class="info-btn" onclick="showTaskInfoPopup({{ loop.index0 }})">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="12" y1="16" x2="12" y2="12"></line>
+            <line x1="12" y1="8" x2="12.01" y2="8"></line>
+          </svg>
+          Details
+        </button>
+
+        <div class="task-data" style="display: none;"
+          data-task-id="{{ task[0] }}"
+          data-task-name="{{ task[1] }}"
+          data-created-at="{{ task[3] }}"
+          data-due-date="{% if task[4] and task[4] != '' %}{{ task[4] }}{% else %}No Due Date{% endif %}"
+          data-time-left="{{ task[5] }}"
+          data-has-unfinished-steps="{% if task[0] in tasks_with_unfinished_steps %}true{% else %}false{% endif %}">
+        </div>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
         </div>
 
         <!-- Completed Tasks Table -->
@@ -105,26 +106,27 @@
                 </svg>
                 <h3>Completed Tasks</h3>
             </div>
-            <table id="completedTable">
-                <thead>
-                    <tr>
-                        <th>No</th>
-                        <th>Task</th>
-                        <th>Date Completed</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for task in completed_tasks %}
-                    <tr>
-                        <td>{{ loop.index }}</td>
-                        <td class="task-name-cell">
-                            <span class="task-name">{{ task[0] }}</span>
-                        </td>
-                        <td>{{ task[1] }}</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
+           <table id="completedTable" class="task-table task-table--completed">
+  <thead>
+    <tr>
+      <th class="col-no">N o</th>
+      <th class="col-task">T a s k</th>
+      <th class="col-date">D a t e   C o m p l e t e d</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for task in completed_tasks %}
+    <tr>
+      <td class="col-no">{{ loop.index }}</td>
+      <td class="task-name-cell col-task">
+        <span class="task-name">{{ task[0] }}</span>
+      </td>
+      <td class="col-date">{{ task[1] }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
         </div>
     </div>
 

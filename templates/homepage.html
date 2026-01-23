@@ -4,6 +4,12 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Task Manager</title>
+    <script>
+  (function () {
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') document.body.classList.add('light-mode');
+  })();
+</script>
     <link rel="stylesheet" href="static/css/homepage.css">
 </head>
 <body>
@@ -16,7 +22,7 @@
         <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Task Manager</h1>
-            <p class="page-subtitle">Into the organized</p>
+            <p class="page-subtitle">Manage Your Workflow Here!</p>
             <h2 class="welcome-message">Welcome back, {{ username }}! 👋</h2>
         </div>
 
@@ -149,9 +155,7 @@
         // Load saved theme
         window.addEventListener('DOMContentLoaded', () => {
             const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') {
-                document.body.classList.add('light-mode');
-            }
+            if (savedTheme === 'light') document.body.classList.add('light-mode');
         });
 
         function showTaskPopup() {

@@ -6,7 +6,7 @@
 
 **A dynamic, feature-rich Task Management System built with Flask and MySQL.** Track workflows, break tasks into steps, and get performance feedback with a sleek, responsive UI.
 
-[Report Bug](mailto:thonedra.dev@gmail.com) · [Request Feature](mailto:thonedra.dev@gmail.com)
+
 
 </div>
 

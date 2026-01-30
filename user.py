@@ -28,6 +28,8 @@ def register():
         # Check if username exists
         cursor.execute("SELECT * FROM users WHERE username = %s", (username,))
         if cursor.fetchone():
+            cursor.close()
+            connection.close()
             return "Username already taken!", 400
 
         # Insert into users table
@@ -40,7 +42,8 @@ def register():
 
         return redirect('/login')  # Redirect to login after registration
 
-    return render_template("register.html")  # Show registration form
+    # ✅ CHANGE: Now renders login_register.html instead of register.html
+    return render_template("login_register.html")
 
 # Route: Login User
 @user_bp.route('/login', methods=['GET', 'POST'])
@@ -64,7 +67,8 @@ def login():
         else:
             return "Invalid username or password!", 400
 
-    return render_template("login.html")  # Show login form
+    # ✅ CHANGE: Now renders login_register.html instead of login.html
+    return render_template("login_register.html")
 
 # Route: Logout User
 @user_bp.route('/logout')

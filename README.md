@@ -213,12 +213,11 @@ I’m always open to collaboration, freelance opportunities, and building cool w
 
 ---
 
-## ⭐ Support This Project (Don’t Be Shy 😄)
+## ⭐ Support This Project 😄
 
 If this repository helped you, inspired you, or saved you even *10 minutes* of struggle...
 
 👉 **Drop a star ⭐** — it costs nothing, but it hits different 😌✨  
-And if the project becomes successful because of you?  
 Yeah… you’re officially part of the story 😎🔥
 
 ---

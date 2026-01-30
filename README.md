@@ -68,17 +68,54 @@ The authentication interface is designed with a **two-panel sliding layout**, gi
 
 ## 📸 App Screenshots (Core Features)
 
-### 🧩 Task Creation + Workflow
+### 🧩 1) Task Creation
 
-| Task Creation Workflow | Task Details & Steps |
-|:----------------------:|:--------------------:|
-| <img src="./static/reference_pictures/add_task_popup.png" alt="Add Task Popup" width="100%"> | <img src="./static/reference_pictures/task_details_view.png" alt="Task Details View" width="100%"> |
+<div align="center">
 
-### 🎉 Completion Feedback
+<table>
+  <tr>
+    <td align="center">
+      <img src="./static/reference_pictures/creation1.png" alt="Task Creation 1" width="100%">
+    </td>
+    <td align="center">
+      <img src="./static/reference_pictures/creation2.png" alt="Task Creation 2" width="100%">
+    </td>
+  </tr>
+  <tr>
+    <td colspan="2" align="center">
+      <img src="./static/reference_pictures/creation3.png" alt="Task Creation 3" width="65%">
+    </td>
+  </tr>
+</table>
 
-| Completion Feedback |
-|:-------------------:|
-| <img src="./static/reference_pictures/completion_feedback.png" alt="Completion Feedback" width="100%"> |
+</div>
+
+---
+
+### ✅ 2) Active Tasks
+
+| Active Tasks Overview | Task Details |
+|:---------------------:|:-----------:|
+| <img src="./static/reference_pictures/active_tasks.png" alt="Active Tasks" width="100%"> | <img src="./static/reference_pictures/task_details.png" alt="Task Details" width="100%"> |
+
+---
+
+### 🎉 3) Finished Tasks
+
+<table>
+  <tr>
+    <td width="45%" valign="top">
+      
+**Finished Tasks** shows all completed items in a clean history list.  
+You can review what you accomplished, when it was completed, and keep your workflow organized.
+
+    </td>
+    <td width="55%" align="center">
+      <img src="./static/reference_pictures/completed_tasks.png" alt="Completed Tasks" width="100%">
+    </td>
+  </tr>
+</table>
+
 
 ---
 

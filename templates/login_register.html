@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Task Manager - Login & Register</title>
+    <link rel="stylesheet" href="static/css/style_starter.css">
+    <link rel="stylesheet" href="static/css/as-alert-message.min.css">
+    <link rel="stylesheet" href="static/css/login_register.css">
+</head>
+<body>
+    <!-- Theme Toggle Button -->
+    <div class="theme-toggle" onclick="toggleTheme()">
+        <span class="theme-icon"></span>
+    </div>
+
+    <!-- Main Container with Sliding Panels -->
+    <div class="auth-container" id="authContainer">
+        
+        <!-- LOGIN FORM (Left Side Initially) -->
+        <div class="form-container sign-in-container">
+            <form action="/login" method="POST" class="auth-form" name="sign-in-form" onsubmit="return signInValidateForm()">
+                <h1 class="form-title">✨ Sign In</h1>
+                
+                <div class="input-group">
+                    <label for="signin-username" class="label">👤 Username</label>
+                    <input type="text" name="username" id="signin-username" class="input-field" placeholder="Enter your username" required>
+                </div>
+
+                <div class="input-group">
+                    <label for="signin-password" class="label">🔒 Password</label>
+                    <input type="password" name="password" id="signin-password" class="input-field" placeholder="Enter your password" required>
+                </div>
+
+                <a href="#" class="forgot-password">Forgot your password?</a>
+                
+                <button type="submit" class="btn btn-primary">🚀 Sign In</button>
+            </form>
+        </div>
+
+        <!-- REGISTER FORM (Right Side Initially - Hidden, Scrollable) -->
+        <div class="form-container sign-up-container">
+            <div class="form-scroll-wrapper">
+                <form action="/register" method="POST" class="auth-form" name="sign-up-form" onsubmit="return signUpValidateForm()">
+                    <h1 class="form-title">📝 Create Account</h1>
+                    
+                    <div class="input-group">
+                        <label for="signup-username" class="label">👤 Username</label>
+                        <input type="text" name="username" id="signup-username" class="input-field" placeholder="Choose a username" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="signup-position" class="label">💼 Position</label>
+                        <input type="text" name="position" id="signup-position" class="input-field" placeholder="Your job position" required>
+                    </div>
+
+                    <div class="input-group-row">
+                        <div class="input-group half">
+                            <label for="signup-age" class="label">🎂 Age</label>
+                            <input type="number" name="age" id="signup-age" class="input-field" placeholder="Age" required>
+                        </div>
+
+                        <div class="input-group half">
+                            <label for="signup-gender" class="label">⚧️ Gender</label>
+                            <select name="gender" id="signup-gender" class="select-field" required>
+                                <option value="">Select</option>
+                                <option value="Male">Male</option>
+                                <option value="Female">Female</option>
+                                <option value="Other">Other</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="signup-password" class="label">🔒 Password</label>
+                        <input type="password" name="password" id="signup-password" class="input-field" placeholder="Create a password" required>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary">🚀 Sign Up</button>
+                </form>
+            </div>
+        </div>
+
+        <!-- OVERLAY PANEL (Sliding Panel with Background Images) -->
+        <div class="overlay-container">
+            <div class="overlay">
+                <!-- Left Panel - Welcome Back -->
+                <div class="overlay-panel overlay-left">
+                    <div class="overlay-content">
+                        <h1 class="overlay-title">Welcome Back!</h1>
+                        <p class="overlay-text">To keep connected with us, please login with your personal info</p>
+                        <button class="btn btn-ghost" id="signIn">SIGN IN</button>
+                    </div>
+                </div>
+                
+                <!-- Right Panel - Hello Friend -->
+                <div class="overlay-panel overlay-right">
+                    <div class="overlay-content">
+                        <h1 class="overlay-title">Hello, Friend!</h1>
+                        <p class="overlay-text">Enter your personal details and start your journey with us</p>
+                        <button class="btn btn-ghost" id="signUp">SIGN UP</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="static/js/jquery-3.3.1.min.js"></script>
+    <script src="static/js/bootstrap.min.js"></script>
+    <script src="static/js/as-alert-message.min.js"></script>
+    <script src="static/js/login_register.js"></script>
+</body>
+</html>

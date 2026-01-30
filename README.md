@@ -135,6 +135,7 @@ You can review what you accomplished, when it was completed, and keep your workf
 
 ### 🧪 Setup & Run (Full Steps)
 
+
 # 1) Clone the repository
 git clone https://github.com/yourusername/task-manager.git
 cd task-manager
@@ -199,6 +200,28 @@ python backend.py
 
 # Open:
 # http://127.0.0.1:5000
+
+
+---
+
+## 🤝 Need Help or Want to Collaborate?
+
+If you run into any issues while setting up the project, need help customizing features, or you’re interested in working together on something awesome — feel free to reach out anytime.
+
+📧 **Email me:** [thonedra.dev@gmail.com](mailto:thonedra.dev@gmail.com)  
+I’m always open to collaboration, freelance opportunities, and building cool web projects 🚀
+
+---
+
+## ⭐ Support This Project (Don’t Be Shy 😄)
+
+If this repository helped you, inspired you, or saved you even *10 minutes* of struggle...
+
+👉 **Drop a star ⭐** — it costs nothing, but it hits different 😌✨  
+And if the project becomes successful because of you?  
+Yeah… you’re officially part of the story 😎🔥
+
+---
 
 
 

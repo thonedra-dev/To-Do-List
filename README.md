@@ -2,7 +2,7 @@
 
 <div align="center">
 
-![Project Banner](static/reference_pictures/dashboard_view.png)
+![Project Banner](static/reference_pictures/homepage.png)
 
 **A dynamic, feature-rich Task Management System built with Flask and MySQL.** Track workflows, break tasks into steps, and get performance feedback with a sleek, responsive UI.
 

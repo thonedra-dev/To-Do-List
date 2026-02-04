@@ -81,7 +81,7 @@ body.light-mode::after {
     position: fixed;
     top: 24px;
     right: 24px;
-    background: rgba(0, 0, 0, 0.4);
+    background: #1a1a1a;
     backdrop-filter: blur(10px);
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 50px;
@@ -217,8 +217,7 @@ body.light-mode .task-name strong {
 .btn-secondary {
     display: inline-block;
     padding: 12px 24px;
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
+    background: #242424;
     border: 1px solid rgba(255, 255, 255, 0.2);
     border-radius: 10px;
     color: #ffffff;
@@ -249,8 +248,7 @@ body.light-mode .btn-secondary:hover {
 
 /* Steps container */
 .steps-container {
-    background: rgba(255, 255, 255, 0.05);
-    backdrop-filter: blur(20px);
+    background: #1a1a1a;
     border: 2px solid rgba(255, 255, 255, 0.15);
     border-radius: 20px;
     padding: 45px;

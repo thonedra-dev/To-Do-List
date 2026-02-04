@@ -11,7 +11,7 @@
     --accent-dark: #ffffff;
     --accent-dark-soft: rgba(255, 255, 255, 0.9);
     --text-dark-muted: rgba(255, 255, 255, 0.75);
-    --glass-dark: rgba(255, 255, 255, 0.05);
+    --glass-dark: #1a1a1a;
     --glass-dark-hover: rgba(255, 255, 255, 0.12);
     --border-dark: rgba(255, 255, 255, 0.25);
     --border-dark-soft: rgba(255, 255, 255, 0.12);

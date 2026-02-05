@@ -173,7 +173,7 @@ def google_register():
         # Based on your image, you only showed: id, username, position, age, gender, password.
         # I will insert just what your table has.
         
-        cursor.execute("INSERT INTO users (username, email, position, age, gender, password) VALUES (%s, NULL, NULL, NULL, NULL)",
+        cursor.execute("INSERT INTO users (username, email, position, age, gender, password) VALUES (%s, %s, NULL, NULL, NULL, NULL)",
                        (username,email))
         
         connection.commit()

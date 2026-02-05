@@ -131,16 +131,38 @@ def send_verification_otp():
 @user_bp.route('/verify_otp', methods=['POST'])
 def verify_otp():
     data = request.get_json()
-    user_otp = data.get('otp')
     email = data.get('email')
-    
-    # Check if OTP matches what we saved in session
-    if 'current_otp' in session and session['current_otp'] == user_otp:
-        # Optional: Check if email matches too
-        if session.get('otp_email') == email:
+    user_otp = data.get('otp')
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Look for the LATEST unverified OTP for this specific email
+        # We order by otp_id DESC to get the most recent one sent
+        sql = """
+            SELECT otp_id FROM otp_verifications 
+            WHERE email_address = %s AND otp_code = %s AND verified = 0 
+            ORDER BY otp_id DESC LIMIT 1
+        """
+        cursor.execute(sql, (email, user_otp))
+        result = cursor.fetchone()
+
+        if result:
+            otp_id = result[0]
+            # Success! Mark it as verified so it can't be reused
+            cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE otp_id = %s", (otp_id,))
+            connection.commit()
             return jsonify({'success': True})
-    
-    return jsonify({'success': False, 'message': 'Invalid OTP'})
+        else:
+            # Code was wrong or already used
+            return jsonify({'success': False, 'message': 'Invalid or expired code'})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        cursor.close()
+        connection.close()
 
 
 # 3. Finalize Google Registration

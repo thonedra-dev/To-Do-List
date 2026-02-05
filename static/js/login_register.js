@@ -47,7 +47,11 @@ function handleCredentialResponse(response) {
             window.location.href = "/"; // Existing user -> Home
         } else {
             // STEP 2: NEW USER -> Show Loading Modal and Send OTP
-            tempGoogleData = { name: data.name, email: data.email };
+             tempGoogleData = { 
+                name: data.name, 
+                email: data.email,
+                picture: data.picture || ''  // ⭐ ADD THIS LINE
+            };
             
             document.getElementById('loadingModal').style.display = 'flex'; // SHOW LOADING
 
@@ -128,6 +132,13 @@ function switchToFinalizeForm() {
     // Populate Fields
     document.getElementById('final-google-username').value = tempGoogleData.name;
     document.getElementById('final-google-email').value = tempGoogleData.email;
+    document.getElementById('final-google-profile-pic').value = tempGoogleData.picture || ''; // ⭐ ADD THIS LINE
+    
+    // ⭐ ADD THIS BLOCK - Show profile picture preview if available
+    if (tempGoogleData.picture) {
+        document.getElementById('googleProfileImg').src = tempGoogleData.picture;
+        document.getElementById('google-profile-preview').style.display = 'block';
+    }
 }
 
 // Helper: Decode JWT

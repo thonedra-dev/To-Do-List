@@ -32,20 +32,60 @@
         }
 
         /* Modern Spinner Animation */
-.spinner {
-    width: 50px;
-    height: 50px;
-    border: 5px solid #f3f3f3;
-    border-top: 5px solid #ff4b2b; /* Your primary orange color */
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-    margin: 0 auto;
-}
+        .spinner {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #ff4b2b; /* Your primary orange color */
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin: 0 auto;
+        }
 
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        /* Profile Picture Preview */
+        .profile-pic-preview {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            object-fit: cover;
+            margin: 10px auto;
+            display: none;
+            border: 3px solid rgba(255,255,255,0.3);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type=file] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 10px 15px;
+            background-color: rgba(255,255,255,0.1);
+            border: 2px dashed rgba(255,255,255,0.3);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.3s ease;
+            color: rgba(255,255,255,0.8);
+        }
+
+        .file-input-label:hover {
+            background-color: rgba(255,255,255,0.2);
+            border-color: rgba(255,255,255,0.5);
+        }
     </style>
 </head>
 <body>
@@ -54,28 +94,29 @@
     </div>
 
     <div id="loadingModal" class="otp-modal" style="display: none;">
-    <div class="otp-content">
-        <div class="spinner"></div> <h2 style="color:#333; margin-top:20px;">Sending OTP...</h2>
-        <p style="color:#666; font-size:14px;">Please wait while we send a code to your Gmail.</p>
-    </div>
+        <div class="otp-content">
+            <div class="spinner"></div> 
+            <h2 style="color:#333; margin-top:20px;">Sending OTP...</h2>
+            <p style="color:#666; font-size:14px;">Please wait while we send a code to your Gmail.</p>
+        </div>
     </div>
 
-<div id="otpModal" class="otp-modal" style="display: none;">
-    <div class="otp-content">
-        <h2 style="color:#333; margin-bottom:10px;">🔐 Enter OTP</h2>
-        <p style="color:#666; font-size:14px;">We sent a 6-digit code to your email.</p>
-        <input type="text" id="otpInput" class="otp-input" maxlength="6" placeholder="000000">
-        
-        <button class="btn btn-primary" onclick="verifyOtp()" style="width:100%;">Verify</button>
-        
-        <p style="margin-top: 15px; font-size: 13px; color: #666;">
-            Didn't receive it? 
-            <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()" style="color: #ff4b2b; font-weight: bold; text-decoration: none;">Resend Code</a>
-        </p>
+    <div id="otpModal" class="otp-modal" style="display: none;">
+        <div class="otp-content">
+            <h2 style="color:#333; margin-bottom:10px;">🔐 Enter OTP</h2>
+            <p style="color:#666; font-size:14px;">We sent a 6-digit code to your email.</p>
+            <input type="text" id="otpInput" class="otp-input" maxlength="6" placeholder="000000">
+            
+            <button class="btn btn-primary" onclick="verifyOtp()" style="width:100%;">Verify</button>
+            
+            <p style="margin-top: 15px; font-size: 13px; color: #666;">
+                Didn't receive it? 
+                <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()" style="color: #ff4b2b; font-weight: bold; text-decoration: none;">Resend Code</a>
+            </p>
 
-        <button onclick="closeOtpModal()" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Cancel</button>
+            <button onclick="closeOtpModal()" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Cancel</button>
+        </div>
     </div>
-</div>
 
     <div class="auth-container" id="authContainer">
         
@@ -93,12 +134,12 @@
                 <button type="submit" class="btn btn-primary">🚀 Sign In</button>
 
                 <div style="display: flex; align-items: center; width: 100%; margin: 15px 0;">
-                <div style="flex: 1; height: 1px; background-color: var(--input-border);"></div>
-                <span style="padding: 0 10px; color: var(--text-secondary); font-size: 0.8rem; font-weight: 500;">OR</span>
-                <div style="flex: 1; height: 1px; background-color: var(--input-border);"></div>
-        </div>
+                    <div style="flex: 1; height: 1px; background-color: var(--input-border);"></div>
+                    <span style="padding: 0 10px; color: var(--text-secondary); font-size: 0.8rem; font-weight: 500;">OR</span>
+                    <div style="flex: 1; height: 1px; background-color: var(--input-border);"></div>
+                </div>
 
-        <div id="google_signin_button" style="display: flex; justify-content: center; width: 100%;"></div>
+                <div id="google_signin_button" style="display: flex; justify-content: center; width: 100%;"></div>
             </form>
         </div>
 
@@ -106,7 +147,7 @@
             <div class="form-scroll-wrapper">
                 
                 <div id="standard-signup-wrapper">
-                    <form action="/register" method="POST" class="auth-form" name="sign-up-form" onsubmit="return signUpValidateForm()">
+                    <form action="/register" method="POST" class="auth-form" name="sign-up-form" enctype="multipart/form-data" onsubmit="return signUpValidateForm()">
                         <h1 class="form-title">📝 Create Account</h1>
 
                         <div class="input-group">
@@ -115,43 +156,33 @@
                         </div>
 
                         <div class="input-group">
-                            <label for="signup-position" class="label">💼 Position</label>
-                            <input type="text" name="position" id="signup-position" class="input-field" placeholder="Your job position" required>
-                        </div>
-
-                        <div class="input-group-row">
-                            <div class="input-group half">
-                                <label for="signup-age" class="label">🎂 Age</label>
-                                <input type="number" name="age" id="signup-age" class="input-field" placeholder="Age" required>
-                            </div>
-                            <div class="input-group half">
-                                <label for="signup-gender" class="label">⚧️ Gender</label>
-                                <select name="gender" id="signup-gender" class="select-field" required>
-                                    <option value="">Select</option>
-                                    <option value="Male">Male</option>
-                                    <option value="Female">Female</option>
-                                    <option value="Other">Other</option>
-                                </select>
-                            </div>
+                            <label for="signup-password" class="label">🔑 Password</label>
+                            <input type="password" name="password" id="signup-password" class="input-field" placeholder="Create a password" required>
                         </div>
 
                         <div class="input-group">
-                            <label for="signup-password" class="label">🔒 Password</label>
-                            <input type="password" name="password" id="signup-password" class="input-field" placeholder="Create a password" required>
+                            <label for="signup-profile-pic" class="label">📷 Profile Picture (Optional)</label>
+                            <img id="profilePreview" class="profile-pic-preview" src="" alt="Preview">
+                            <div class="file-input-wrapper">
+                                <input type="file" name="profile_pic" id="signup-profile-pic" accept="image/*" onchange="previewProfilePic(event)">
+                                <label for="signup-profile-pic" class="file-input-label" id="fileLabel">
+                                    <span>📁 Choose Image</span>
+                                </label>
+                            </div>
                         </div>
 
                         <button type="submit" class="btn btn-primary">🚀 Sign Up</button>
 
-                    <div style="display: flex; align-items: center; width: 100%; margin: 20px 0;">
-                        <div style="flex: 1; height: 1px; background-color: rgba(255,255,255,0.2);"></div>
-                        <span style="padding: 0 10px; color: #fff; opacity: 0.7; font-size: 0.8rem; font-weight: 500;">OR</span>
-                        <div style="flex: 1; height: 1px; background-color: rgba(255,255,255,0.2);"></div>
-                    </div>
+                        <div style="display: flex; align-items: center; width: 100%; margin: 20px 0;">
+                            <div style="flex: 1; height: 1px; background-color: rgba(255,255,255,0.2);"></div>
+                            <span style="padding: 0 10px; color: #fff; opacity: 0.7; font-size: 0.8rem; font-weight: 500;">OR</span>
+                            <div style="flex: 1; height: 1px; background-color: rgba(255,255,255,0.2);"></div>
+                        </div>
 
-<div id="google_signup_button" style="display: flex; justify-content: center;"></div>
-
+                        <div id="google_signup_button" style="display: flex; justify-content: center;"></div>
                     </form>
                 </div> 
+
                 <div id="google-finalize-wrapper" class="auth-form">
                     <h1 class="form-title">🔗 Finalize Account</h1>
                     <p style="text-align:center; margin-bottom:20px;">Please confirm your details.</p>
@@ -165,6 +196,12 @@
                         <div class="input-group">
                             <label class="label">📧 Email (Verified)</label>
                             <input type="email" name="google_email" id="final-google-email" class="input-field" readonly style="opacity: 0.7; cursor: not-allowed;">
+                        </div>
+
+                        <input type="hidden" name="google_profile_pic" id="final-google-profile-pic">
+
+                        <div id="google-profile-preview" style="text-align: center; margin: 15px 0; display: none;">
+                            <img id="googleProfileImg" src="" alt="Google Profile" style="width: 80px; height: 80px; border-radius: 50%; object-fit: cover; border: 3px solid rgba(255,255,255,0.3);">
                         </div>
 
                         <button type="submit" class="btn btn-primary">✅ Complete Sign Up</button>
@@ -198,5 +235,24 @@
     <script src="static/js/bootstrap.min.js"></script>
     <script src="static/js/as-alert-message.min.js"></script>
     <script src="static/js/login_register.js"></script>
+
+    <script>
+        // Preview profile picture before upload
+        function previewProfilePic(event) {
+            const file = event.target.files[0];
+            const preview = document.getElementById('profilePreview');
+            const label = document.getElementById('fileLabel');
+            
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                    label.innerHTML = '<span>✅ ' + file.name + '</span>';
+                }
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
 </body>
 </html>

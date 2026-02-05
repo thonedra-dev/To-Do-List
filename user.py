@@ -4,6 +4,9 @@ import random
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
+from werkzeug.utils import secure_filename
+import requests
+import os
 
 user_bp = Blueprint('user', __name__)  # Create a Flask Blueprint for authentication
 
@@ -11,6 +14,9 @@ user_bp = Blueprint('user', __name__)  # Create a Flask Blueprint for authentica
 # ⚠️ REPLACE THIS WITH YOUR REAL APP PASSWORD
 SENDER_EMAIL = "thonedra.dev@gmail.com"
 SENDER_PASSWORD = "wxeg zgna kvhd ugfc" 
+UPLOAD_FOLDER = 'static/uploads/profile_pics'
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+
 
 def get_db_connection():
     return mysql.connector.connect(
@@ -23,14 +29,32 @@ def get_db_connection():
 
 # --- STANDARD ROUTES ---
 
+def allowed_file(filename):
+    return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 @user_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
         username = request.form.get('username')
-        position = request.form.get('position')
-        age = request.form.get('age')
-        gender = request.form.get('gender')
         password = request.form.get('password')
+        profile_pic = request.files.get('profile_pic')
+        
+        # Handle profile picture upload
+        profile_pic_path = None
+        if profile_pic and profile_pic.filename != '' and allowed_file(profile_pic.filename):
+            # Create upload folder if it doesn't exist
+            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+            
+            # Secure the filename and make it unique
+            filename = secure_filename(profile_pic.filename)
+            # Add username prefix to avoid conflicts
+            unique_filename = f"{username}_{filename}"
+            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+            
+            # Save the file
+            profile_pic.save(filepath)
+            # Store relative path for database
+            profile_pic_path = f"uploads/profile_pics/{unique_filename}"
 
         connection = get_db_connection()
         cursor = connection.cursor()
@@ -42,9 +66,11 @@ def register():
             connection.close()
             return "Username already taken!", 400
 
-        # Insert into users table
-        cursor.execute("INSERT INTO users (username, position, age, gender, password) VALUES (%s, %s, %s, %s, %s)",
-                       (username, position, age, gender, password))
+        # Insert into users table with profile_pic
+        cursor.execute(
+            "INSERT INTO users (username, password, profile_pic) VALUES (%s, %s, %s)",
+            (username, password, profile_pic_path)
+        )
         connection.commit()
 
         cursor.close()
@@ -174,9 +200,35 @@ def google_register():
     # This comes from the "Finalize Account" form
     username = request.form.get('google_username')
     email = request.form.get('google_email')
+    google_profile_pic_url = request.form.get('google_profile_pic')
     
     if not username or not email:
         return "Error: Missing data", 400
+
+    profile_pic_path = None
+    
+    # Download and save Google profile picture if available
+    if google_profile_pic_url and google_profile_pic_url != '':
+        try:
+            # Create upload folder if it doesn't exist
+            os.makedirs(UPLOAD_FOLDER, exist_ok=True)
+            
+            # Download the image from Google
+            response = requests.get(google_profile_pic_url, timeout=10)
+            if response.status_code == 200:
+                # Generate filename
+                filename = f"{username}_google_profile.jpg"
+                filepath = os.path.join(UPLOAD_FOLDER, filename)
+                
+                # Save the image
+                with open(filepath, 'wb') as f:
+                    f.write(response.content)
+                
+                # Store relative path for database
+                profile_pic_path = f"uploads/profile_pics/{filename}"
+        except Exception as e:
+            print(f"Error downloading Google profile picture: {e}")
+            # Continue without profile picture if download fails
 
     connection = get_db_connection()
     cursor = connection.cursor()
@@ -188,22 +240,16 @@ def google_register():
         connection.close()
         return "Username already taken! Please go back and choose another.", 400
 
-    # Insert Google User (Password, Age, Gender, Position will be NULL)
-    # Note: We are not storing the email in the DB based on your schema image 
-    # (unless you added an email column recently). 
-    # If you DON'T have an email column, we just store the username.
-    # If you DO have an email column, uncomment the email part below.
-    
     try:
-        # ASSUMPTION: You have an 'email' column. If not, remove "email" from query.
-        # Based on your image, you only showed: id, username, position, age, gender, password.
-        # I will insert just what your table has.
-        
-        cursor.execute("INSERT INTO users (username, email, position, age, gender, password) VALUES (%s, %s, NULL, NULL, NULL, NULL)",
-                       (username,email))
+        # Insert Google User with email and profile_pic
+        # Password, Age, Gender, Position will be NULL
+        cursor.execute(
+            "INSERT INTO users (username, email, password, profile_pic) VALUES (%s, %s, NULL, %s)",
+            (username, email, profile_pic_path)
+        )
         
         connection.commit()
-        user_id = cursor.lastrowid # Get the new ID
+        user_id = cursor.lastrowid  # Get the new ID
         
         # Log them in automatically
         session['user_id'] = user_id

@@ -1,18 +1,28 @@
-from flask import Blueprint, request, session, redirect, render_template
+from flask import Blueprint, request, session, redirect, render_template, jsonify, url_for
 import mysql.connector
+import random
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 
 user_bp = Blueprint('user', __name__)  # Create a Flask Blueprint for authentication
+
+# --- CONFIGURATION ---
+# ⚠️ REPLACE THIS WITH YOUR REAL APP PASSWORD
+SENDER_EMAIL = "thonedra.dev@gmail.com"
+SENDER_PASSWORD = "wxeg zgna kvhd ugfc" 
 
 def get_db_connection():
     return mysql.connector.connect(
         host="localhost",
         user="root",
-        password="your_password",
+        password="your_password",  # Assuming empty password for XAMPP default
         database="todolist",
         port=4306
     )
 
-# Route: Register User
+# --- STANDARD ROUTES ---
+
 @user_bp.route('/register', methods=['GET', 'POST'])
 def register():
     if request.method == 'POST':
@@ -40,12 +50,10 @@ def register():
         cursor.close()
         connection.close()
 
-        return redirect('/login')  # Redirect to login after registration
+        return redirect('/login') 
 
-    # ✅ CHANGE: Now renders login_register.html instead of register.html
     return render_template("login_register.html")
 
-# Route: Login User
 @user_bp.route('/login', methods=['GET', 'POST'])
 def login():
     if request.method == 'POST':
@@ -61,17 +69,79 @@ def login():
         cursor.close()
         connection.close()
 
-        if user and user[1] == password:  # Password check (plaintext, not secure)
-            session['user_id'] = user[0]  # Store user ID in session
+        if user and user[1] == password:
+            session['user_id'] = user[0]
             return redirect('/')
         else:
             return "Invalid username or password!", 400
 
-    # ✅ CHANGE: Now renders login_register.html instead of login.html
     return render_template("login_register.html")
 
-# Route: Logout User
 @user_bp.route('/logout')
 def logout():
-    session.pop('user_id', None)  # Remove user from session
+    session.pop('user_id', None)
     return redirect('/login')
+
+
+# --- GOOGLE AUTH & OTP ROUTES (NEW!) ---
+
+# 1. Send OTP to the Google Email
+@user_bp.route('/send_verification_otp', methods=['POST'])
+def send_verification_otp():
+    data = request.get_json()
+    email = data.get('email')
+    
+    if not email:
+        return jsonify({'success': False, 'message': 'No email provided'})
+
+    # Generate 6-digit OTP
+    otp_code = str(random.randint(100000, 999999))
+    
+    # Store in session for verification later
+    session['current_otp'] = otp_code
+    session['otp_email'] = email
+    
+    try:
+        # Create Email
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = email
+        msg['Subject'] = "Your Task Manager Verification Code"
+        
+        body = f"Hello,\n\nYour verification code is: {otp_code}\n\nPlease enter this code to complete your registration.\n\nBest,\nTask Manager Team"
+        msg.attach(MIMEText(body, 'plain'))
+        
+        # Send via Gmail SMTP
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        
+        print(f"OTP {otp_code} sent to {email}") # Debugging
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"Error sending email: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+
+
+# 2. Verify the OTP
+@user_bp.route('/verify_otp', methods=['POST'])
+def verify_otp():
+    data = request.get_json()
+    user_otp = data.get('otp')
+    email = data.get('email')
+    
+    # Check if OTP matches what we saved in session
+    if 'current_otp' in session and session['current_otp'] == user_otp:
+        # Optional: Check if email matches too
+        if session.get('otp_email') == email:
+            return jsonify({'success': True})
+    
+    return jsonify({'success': False, 'message': 'Invalid OTP'})
+
+
+
+
+    return redirect('/')

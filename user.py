@@ -142,6 +142,51 @@ def verify_otp():
     return jsonify({'success': False, 'message': 'Invalid OTP'})
 
 
+# 3. Finalize Google Registration
+@user_bp.route('/google_register', methods=['POST'])
+def google_register():
+    # This comes from the "Finalize Account" form
+    username = request.form.get('google_username')
+    email = request.form.get('google_email')
+    
+    if not username or not email:
+        return "Error: Missing data", 400
 
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    # Check if username exists
+    cursor.execute("SELECT id FROM users WHERE username = %s", (username,))
+    if cursor.fetchone():
+        cursor.close()
+        connection.close()
+        return "Username already taken! Please go back and choose another.", 400
+
+    # Insert Google User (Password, Age, Gender, Position will be NULL)
+    # Note: We are not storing the email in the DB based on your schema image 
+    # (unless you added an email column recently). 
+    # If you DON'T have an email column, we just store the username.
+    # If you DO have an email column, uncomment the email part below.
+    
+    try:
+        # ASSUMPTION: You have an 'email' column. If not, remove "email" from query.
+        # Based on your image, you only showed: id, username, position, age, gender, password.
+        # I will insert just what your table has.
+        
+        cursor.execute("INSERT INTO users (username, email, position, age, gender, password) VALUES (%s, NULL, NULL, NULL, NULL)",
+                       (username,email))
+        
+        connection.commit()
+        user_id = cursor.lastrowid # Get the new ID
+        
+        # Log them in automatically
+        session['user_id'] = user_id
+        
+    except Exception as e:
+        print(f"Database Error: {e}")
+        return f"Database Error: {e}", 500
+    finally:
+        cursor.close()
+        connection.close()
 
     return redirect('/')

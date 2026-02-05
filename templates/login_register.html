@@ -65,7 +65,14 @@
         <h2 style="color:#333; margin-bottom:10px;">🔐 Enter OTP</h2>
         <p style="color:#666; font-size:14px;">We sent a 6-digit code to your email.</p>
         <input type="text" id="otpInput" class="otp-input" maxlength="6" placeholder="000000">
+        
         <button class="btn btn-primary" onclick="verifyOtp()" style="width:100%;">Verify</button>
+        
+        <p style="margin-top: 15px; font-size: 13px; color: #666;">
+            Didn't receive it? 
+            <a href="javascript:void(0)" id="resendBtn" onclick="resendOtp()" style="color: #ff4b2b; font-weight: bold; text-decoration: none;">Resend Code</a>
+        </p>
+
         <button onclick="closeOtpModal()" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Cancel</button>
     </div>
 </div>
@@ -134,11 +141,15 @@
                         </div>
 
                         <button type="submit" class="btn btn-primary">🚀 Sign Up</button>
-                        
-                        <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;">
-                            <p style="text-align: center; margin-bottom: 10px; opacity: 0.7;">Or sign up with</p>
-                            <div id="google_signup_button" style="display: flex; justify-content: center;"></div>
-                        </div>
+
+                    <div style="display: flex; align-items: center; width: 100%; margin: 20px 0;">
+                        <div style="flex: 1; height: 1px; background-color: rgba(255,255,255,0.2);"></div>
+                        <span style="padding: 0 10px; color: #fff; opacity: 0.7; font-size: 0.8rem; font-weight: 500;">OR</span>
+                        <div style="flex: 1; height: 1px; background-color: rgba(255,255,255,0.2);"></div>
+                    </div>
+
+<div id="google_signup_button" style="display: flex; justify-content: center;"></div>
+
                     </form>
                 </div> 
                 <div id="google-finalize-wrapper" class="auth-form">

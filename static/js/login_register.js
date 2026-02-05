@@ -96,6 +96,27 @@ function verifyOtp() {
     });
 }
 
+function resendOtp() {
+    // Show the loading spinner again
+    document.getElementById('otpModal').style.display = 'none';
+    document.getElementById('loadingModal').style.display = 'flex';
+
+    // Call the same OTP route again
+    fetch('/send_verification_otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: tempGoogleData.email })
+    })
+    .then(res => res.json())
+    .then(result => {
+        document.getElementById('loadingModal').style.display = 'none';
+        document.getElementById('otpModal').style.display = 'flex';
+        if (result.success) {
+            alert("A new code has been sent!");
+        }
+    });
+}
+
 // 5. Switch UI to "Finalize Form"
 function switchToFinalizeForm() {
     // Hide Standard Form

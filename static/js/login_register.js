@@ -34,9 +34,8 @@ function toggleTheme() {
 // 1. Handle the Google Response
 function handleCredentialResponse(response) {
     const data = parseJwt(response.credential);
-    console.log("Google Auth Attempt:", data.email);
-
-    // STEP A: Check if this email already exists in our database
+    
+    // STEP 1: Check if user exists (already implemented in previous turn)
     fetch('/check_google_user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -45,16 +44,13 @@ function handleCredentialResponse(response) {
     .then(res => res.json())
     .then(status => {
         if (status.exists) {
-            // CASE 1: USER EXISTS -> They are just signing in. Redirect to Home.
-            window.location.href = "/"; 
+            window.location.href = "/"; // Existing user -> Home
         } else {
-            // CASE 2: NEW USER -> Start the OTP Registration flow.
-            tempGoogleData = {
-                name: data.name,
-                email: data.email
-            };
+            // STEP 2: NEW USER -> Show Loading Modal and Send OTP
+            tempGoogleData = { name: data.name, email: data.email };
+            
+            document.getElementById('loadingModal').style.display = 'flex'; // SHOW LOADING
 
-            // Call Backend to Send OTP
             fetch('/send_verification_otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -62,40 +58,42 @@ function handleCredentialResponse(response) {
             })
             .then(res => res.json())
             .then(result => {
+                document.getElementById('loadingModal').style.display = 'none'; // HIDE LOADING
+                
                 if (result.success) {
-                    document.getElementById('otpModal').style.display = 'flex';
+                    document.getElementById('otpModal').style.display = 'flex'; // SHOW OTP POPUP
                 } else {
-                    alert("Error sending OTP: " + result.message);
+                    alert("Error: " + result.message);
                 }
-            })
-            .catch(err => console.error("OTP Error:", err));
+            });
         }
-    })
-    .catch(err => console.error("Check User Error:", err));
+    });
 }
-// 4. Verify OTP Logic
+
+// UPDATE: Modify the verifyOtp function to trigger the UI shift
 function verifyOtp() {
     const otpInput = document.getElementById('otpInput').value;
 
     fetch('/verify_otp', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-            email: tempGoogleData.email, 
-            otp: otpInput 
-        })
+        body: JSON.stringify({ email: tempGoogleData.email, otp: otpInput })
     })
     .then(res => res.json())
     .then(result => {
         if (result.success) {
-            // Success! 
             closeOtpModal();
-            switchToFinalizeForm();
+            
+            // --- THE MAGIC SHIFT ---
+            // 1. Force the container to slide to the "Sign Up" side
+            authContainer.classList.add('right-panel-active'); 
+            
+            // 2. Switch the internal form to "Finalize" mode
+            switchToFinalizeForm(); 
         } else {
-            alert("Incorrect OTP. Please try again.");
+            alert("Incorrect OTP.");
         }
-    })
-    .catch(err => console.error("Error:", err));
+    });
 }
 
 // 5. Switch UI to "Finalize Form"

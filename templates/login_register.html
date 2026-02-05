@@ -30,6 +30,22 @@
             display: none; /* Hidden by default */
             width: 100%;
         }
+
+        /* Modern Spinner Animation */
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 5px solid #f3f3f3;
+    border-top: 5px solid #ff4b2b; /* Your primary orange color */
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
     </style>
 </head>
 <body>
@@ -37,15 +53,22 @@
         <span class="theme-icon"></span>
     </div>
 
-    <div id="otpModal" class="otp-modal">
-        <div class="otp-content">
-            <h2 style="color:#333; margin-bottom:10px;">🔐 Enter OTP</h2>
-            <p style="color:#666; font-size:14px;">We sent a 6-digit code to your email.</p>
-            <input type="text" id="otpInput" class="otp-input" maxlength="6" placeholder="000000">
-            <button class="btn btn-primary" onclick="verifyOtp()" style="width:100%;">Verify</button>
-            <button onclick="closeOtpModal()" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Cancel</button>
-        </div>
+    <div id="loadingModal" class="otp-modal" style="display: none;">
+    <div class="otp-content">
+        <div class="spinner"></div> <h2 style="color:#333; margin-top:20px;">Sending OTP...</h2>
+        <p style="color:#666; font-size:14px;">Please wait while we send a code to your Gmail.</p>
     </div>
+    </div>
+
+<div id="otpModal" class="otp-modal" style="display: none;">
+    <div class="otp-content">
+        <h2 style="color:#333; margin-bottom:10px;">🔐 Enter OTP</h2>
+        <p style="color:#666; font-size:14px;">We sent a 6-digit code to your email.</p>
+        <input type="text" id="otpInput" class="otp-input" maxlength="6" placeholder="000000">
+        <button class="btn btn-primary" onclick="verifyOtp()" style="width:100%;">Verify</button>
+        <button onclick="closeOtpModal()" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Cancel</button>
+    </div>
+</div>
 
     <div class="auth-container" id="authContainer">
         

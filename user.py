@@ -99,6 +99,9 @@ def send_verification_otp():
     connection = get_db_connection()
     cursor = connection.cursor()
 
+    cursor.execute("DELETE FROM otp_verifications WHERE verified = 1 OR created_at < NOW() - INTERVAL 1 HOUR")
+    connection.commit()
+
     try:
         # Save to database (verified=0 by default)
         sql = "INSERT INTO otp_verifications (email_address, otp_code) VALUES (%s, %s)"

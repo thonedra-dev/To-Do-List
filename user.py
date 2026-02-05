@@ -213,3 +213,27 @@ def google_register():
         connection.close()
 
     return redirect('/')
+
+@user_bp.route('/check_google_user', methods=['POST'])
+def check_google_user():
+    data = request.get_json()
+    email = data.get('email')
+    
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    
+    # Look for the email in the users table
+    cursor.execute("SELECT id FROM users WHERE email = %s", (email,))
+    user = cursor.fetchone()
+    
+    if user:
+        # User exists! Log them in immediately
+        session['user_id'] = user[0]
+        cursor.close()
+        connection.close()
+        return jsonify({'exists': True})
+    
+    # User doesn't exist
+    cursor.close()
+    connection.close()
+    return jsonify({'exists': False})

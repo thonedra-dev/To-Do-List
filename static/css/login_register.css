@@ -568,3 +568,21 @@ body.light-mode .overlay-text {
         gap: 5px;
     }
 }
+/* Gmail Authentication */
+
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 20px 0;
+    color: var(--text-secondary);
+}
+
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--input-border);
+}
+
+.divider:not(:empty)::before { margin-right: .5em; }
+.divider:not(:empty)::after { margin-left: .5em; }

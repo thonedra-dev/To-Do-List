@@ -34,33 +34,45 @@ function toggleTheme() {
 // 1. Handle the Google Response
 function handleCredentialResponse(response) {
     const data = parseJwt(response.credential);
-    console.log("Google User:", data.email);
+    console.log("Google Auth Attempt:", data.email);
 
-    // Store data temporarily
-    tempGoogleData = {
-        name: data.name,
-        email: data.email
-    };
-
-    // 2. Call Backend to Send OTP (AJAX)
-    // We use fetch to call your Python route without reloading the page
-    fetch('/send_verification_otp', {
+    // STEP A: Check if this email already exists in our database
+    fetch('/check_google_user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: data.email })
     })
     .then(res => res.json())
-    .then(result => {
-        if (result.success) {
-            // 3. Open OTP Modal
-            document.getElementById('otpModal').style.display = 'flex';
+    .then(status => {
+        if (status.exists) {
+            // CASE 1: USER EXISTS -> They are just signing in. Redirect to Home.
+            window.location.href = "/"; 
         } else {
-            alert("Error sending OTP: " + result.message);
+            // CASE 2: NEW USER -> Start the OTP Registration flow.
+            tempGoogleData = {
+                name: data.name,
+                email: data.email
+            };
+
+            // Call Backend to Send OTP
+            fetch('/send_verification_otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: data.email })
+            })
+            .then(res => res.json())
+            .then(result => {
+                if (result.success) {
+                    document.getElementById('otpModal').style.display = 'flex';
+                } else {
+                    alert("Error sending OTP: " + result.message);
+                }
+            })
+            .catch(err => console.error("OTP Error:", err));
         }
     })
-    .catch(err => console.error("Error:", err));
+    .catch(err => console.error("Check User Error:", err));
 }
-
 // 4. Verify OTP Logic
 function verifyOtp() {
     const otpInput = document.getElementById('otpInput').value;
@@ -118,17 +130,22 @@ function closeOtpModal() {
 // --- INITIALIZE GOOGLE BUTTON ---
 window.onload = function () {
     google.accounts.id.initialize({
-        // REPLACE WITH YOUR ACTUAL CLIENT ID
         client_id: "856845548813-rrkv0s4j0rei56dt9j3orcptkr0d3c8d.apps.googleusercontent.com",
         callback: handleCredentialResponse
     });
-    
+
+    // Render button on the Sign-Up panel
     google.accounts.id.renderButton(
         document.getElementById("google_signup_button"),
-        { theme: "outline", size: "large", width: "250" }
+        { theme: "outline", size: "large", text: "signup_with", width: "250" }
+    );
+
+    // Render button on the Sign-In panel
+    google.accounts.id.renderButton(
+        document.getElementById("google_signin_button"),
+        { theme: "outline", size: "large", text: "signin_with", width: "250" }
     );
 };
-
 // --- STANDARD FORM VALIDATION ---
 function signUpValidateForm() { return true; }
 function signInValidateForm() { return true; }

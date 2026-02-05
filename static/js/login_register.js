@@ -1,276 +1,134 @@
 /* ========================================
-   TASK MANAGER - SMOOTH ANIMATIONS
-   Clean JavaScript for Login/Register
+   TASK MANAGER - AUTH & GOOGLE LOGIC
    ======================================== */
 
-// ========================================
-// DOM ELEMENTS
-// ========================================
 const signUpButton = document.getElementById('signUp');
 const signInButton = document.getElementById('signIn');
 const authContainer = document.getElementById('authContainer');
 
-// ========================================
-// SMOOTH SLIDING PANEL ANIMATION
-// ======================================== 
+// Temporary storage for Google Data
+let tempGoogleData = {};
 
-// Switch to Sign Up Form
+// --- SLIDING PANEL ANIMATION ---
 signUpButton.addEventListener('click', () => {
     authContainer.classList.add('right-panel-active');
-    
-    // Scroll register form to top when opened
     setTimeout(() => {
         const scrollWrapper = document.querySelector('.sign-up-container .form-scroll-wrapper');
-        if (scrollWrapper) {
-            scrollWrapper.scrollTop = 0;
-        }
+        if (scrollWrapper) scrollWrapper.scrollTop = 0;
     }, 100);
 });
 
-// Switch to Sign In Form
 signInButton.addEventListener('click', () => {
     authContainer.classList.remove('right-panel-active');
 });
 
-// ========================================
-// THEME TOGGLE FUNCTIONALITY
-// ========================================
-
+// --- THEME TOGGLE ---
 function toggleTheme() {
     document.body.classList.toggle('light-mode');
-    
-    // Save theme preference to localStorage
     const theme = document.body.classList.contains('light-mode') ? 'light' : 'dark';
     localStorage.setItem('theme', theme);
 }
 
-// Load saved theme on page load
-window.addEventListener('DOMContentLoaded', () => {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') {
-        document.body.classList.add('light-mode');
-    }
-});
+// --- GOOGLE IDENTITY LOGIC ---
 
-// ========================================
-// FORM VALIDATION
-// ========================================
+// 1. Handle the Google Response
+function handleCredentialResponse(response) {
+    const data = parseJwt(response.credential);
+    console.log("Google User:", data.email);
 
-// Sign Up Form Validation
-function signUpValidateForm() {
-    const username = document.forms["sign-up-form"]["username"].value;
-    const position = document.forms["sign-up-form"]["position"].value;
-    const age = document.forms["sign-up-form"]["age"].value;
-    const gender = document.forms["sign-up-form"]["gender"].value;
-    const password = document.forms["sign-up-form"]["password"].value;
+    // Store data temporarily
+    tempGoogleData = {
+        name: data.name,
+        email: data.email
+    };
 
-    // Validate Username
-    if (username === "" || username.trim().length === 0) {
-        asAlertMsg({
-            type: "error",
-            title: "Empty Field",
-            message: "'Username' cannot be empty!",
-            button: {
-                text: "OK",
-                bg: "error"
-            }
-        });
-        return false;
-    }
-
-    // Validate Position
-    if (position === "" || position.trim().length === 0) {
-        asAlertMsg({
-            type: "error",
-            title: "Empty Field",
-            message: "'Position' cannot be empty!",
-            button: {
-                text: "OK",
-                bg: "error"
-            }
-        });
-        return false;
-    }
-
-    // Validate Age
-    if (age === "" || age < 1 || age > 150) {
-        asAlertMsg({
-            type: "error",
-            title: "Invalid Age",
-            message: "Please enter a valid age (1-150)!",
-            button: {
-                text: "OK",
-                bg: "error"
-            }
-        });
-        return false;
-    }
-
-    // Validate Gender
-    if (gender === "") {
-        asAlertMsg({
-            type: "error",
-            title: "Empty Field",
-            message: "Please select your gender!",
-            button: {
-                text: "OK",
-                bg: "error"
-            }
-        });
-        return false;
-    }
-
-    // Validate Password
-    if (password === "" || password.length < 6) {
-        asAlertMsg({
-            type: "error",
-            title: "Invalid Password",
-            message: "Password must be at least 6 characters long!",
-            button: {
-                text: "OK",
-                bg: "error"
-            }
-        });
-        return false;
-    }
-
-    // All validations passed
-    return true;
-}
-
-// Sign In Form Validation
-function signInValidateForm() {
-    const username = document.forms["sign-in-form"]["username"].value;
-    const password = document.forms["sign-in-form"]["password"].value;
-
-    // Validate Username
-    if (username === "" || username.trim().length === 0) {
-        asAlertMsg({
-            type: "error",
-            title: "Empty Field",
-            message: "'Username' cannot be empty!",
-            button: {
-                text: "OK",
-                bg: "error"
-            }
-        });
-        return false;
-    }
-
-    // Validate Password
-    if (password === "" || password.trim().length === 0) {
-        asAlertMsg({
-            type: "error",
-            title: "Empty Field",
-            message: "'Password' cannot be empty!",
-            button: {
-                text: "OK",
-                bg: "error"
-            }
-        });
-        return false;
-    }
-
-    // All validations passed
-    return true;
-}
-
-// ========================================
-// PREVENT DOUBLE FORM SUBMISSION
-// ========================================
-
-document.querySelectorAll('form').forEach(form => {
-    form.addEventListener('submit', function(e) {
-        const submitButton = this.querySelector('button[type="submit"]');
-        if (submitButton.disabled) {
-            e.preventDefault();
-            return false;
+    // 2. Call Backend to Send OTP (AJAX)
+    // We use fetch to call your Python route without reloading the page
+    fetch('/send_verification_otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: data.email })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            // 3. Open OTP Modal
+            document.getElementById('otpModal').style.display = 'flex';
+        } else {
+            alert("Error sending OTP: " + result.message);
         }
-        
-        submitButton.disabled = true;
-        submitButton.textContent = '⏳ Processing...';
-        
-        // Re-enable after 3 seconds (in case validation fails)
-        setTimeout(() => {
-            submitButton.disabled = false;
-            const formName = this.getAttribute('name');
-            submitButton.textContent = formName === 'sign-in-form' ? '🚀 Sign In' : '🚀 Sign Up';
-        }, 3000);
-    });
-});
+    })
+    .catch(err => console.error("Error:", err));
+}
 
-// ========================================
-// ENHANCED INPUT FOCUS EFFECTS
-// ========================================
+// 4. Verify OTP Logic
+function verifyOtp() {
+    const otpInput = document.getElementById('otpInput').value;
 
-document.querySelectorAll('.input-field, .select-field').forEach(input => {
-    input.addEventListener('focus', function() {
-        this.parentElement.classList.add('input-focused');
+    fetch('/verify_otp', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+            email: tempGoogleData.email, 
+            otp: otpInput 
+        })
+    })
+    .then(res => res.json())
+    .then(result => {
+        if (result.success) {
+            // Success! 
+            closeOtpModal();
+            switchToFinalizeForm();
+        } else {
+            alert("Incorrect OTP. Please try again.");
+        }
+    })
+    .catch(err => console.error("Error:", err));
+}
+
+// 5. Switch UI to "Finalize Form"
+function switchToFinalizeForm() {
+    // Hide Standard Form
+    document.getElementById('standard-signup-wrapper').style.display = 'none';
+    
+    // Show Google Finalize Form
+    document.getElementById('google-finalize-wrapper').style.display = 'block';
+
+    // Populate Fields
+    document.getElementById('final-google-username').value = tempGoogleData.name;
+    document.getElementById('final-google-email').value = tempGoogleData.email;
+}
+
+// Helper: Decode JWT
+function parseJwt(token) {
+    var base64Url = token.split('.')[1];
+    var base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+    var jsonPayload = decodeURIComponent(atob(base64).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join(''));
+    return JSON.parse(jsonPayload);
+}
+
+// Helper: Close Modal
+function closeOtpModal() {
+    document.getElementById('otpModal').style.display = 'none';
+    document.getElementById('otpInput').value = ''; // Clear input
+}
+
+// --- INITIALIZE GOOGLE BUTTON ---
+window.onload = function () {
+    google.accounts.id.initialize({
+        // REPLACE WITH YOUR ACTUAL CLIENT ID
+        client_id: "856845548813-rrkv0s4j0rei56dt9j3orcptkr0d3c8d.apps.googleusercontent.com",
+        callback: handleCredentialResponse
     });
     
-    input.addEventListener('blur', function() {
-        this.parentElement.classList.remove('input-focused');
-    });
-});
+    google.accounts.id.renderButton(
+        document.getElementById("google_signup_button"),
+        { theme: "outline", size: "large", width: "250" }
+    );
+};
 
-// ========================================
-// FORGOT PASSWORD PLACEHOLDER
-// ========================================
-
-const forgotPasswordLink = document.querySelector('.forgot-password');
-if (forgotPasswordLink) {
-    forgotPasswordLink.addEventListener('click', function(e) {
-        e.preventDefault();
-        
-        asAlertMsg({
-            type: "default",
-            title: "Password Reset",
-            message: "Password reset functionality will be available soon. Please contact your administrator.",
-            button: {
-                text: "OK",
-                bg: "default"
-            }
-        });
-    });
-}
-
-// ========================================
-// KEYBOARD NAVIGATION
-// ========================================
-
-document.addEventListener('keypress', function(e) {
-    if (e.key === 'Enter') {
-        const activeElement = document.activeElement;
-        if (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT') {
-            const form = activeElement.closest('form');
-            if (form) {
-                const submitButton = form.querySelector('button[type="submit"]');
-                if (submitButton && !submitButton.disabled) {
-                    e.preventDefault();
-                    submitButton.click();
-                }
-            }
-        }
-    }
-});
-
-// ========================================
-// SMOOTH SCROLL FOR REGISTER FORM
-// ========================================
-
-// Add smooth scrolling behavior to register form
-const signUpContainer = document.querySelector('.sign-up-container');
-if (signUpContainer) {
-    const scrollWrapper = signUpContainer.querySelector('.form-scroll-wrapper');
-    if (scrollWrapper) {
-        scrollWrapper.style.scrollBehavior = 'smooth';
-    }
-}
-
-// ========================================
-// CONSOLE WELCOME MESSAGE
-// ========================================
-
-console.log('%c✨ Task Manager Authentication', 'color: #667eea; font-size: 18px; font-weight: bold;');
-console.log('%c🎨 Clean Black & White Theme', 'color: #764ba2; font-size: 14px;');
-console.log('%c🚀 Smooth Sliding Panels • Scrollable Forms • Image Backgrounds', 'color: #999; font-size: 12px;');
+// --- STANDARD FORM VALIDATION ---
+function signUpValidateForm() { return true; }
+function signInValidateForm() { return true; }

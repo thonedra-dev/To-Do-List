@@ -8,84 +8,132 @@
     <link rel="stylesheet" href="static/css/style_starter.css">
     <link rel="stylesheet" href="static/css/as-alert-message.min.css">
     <link rel="stylesheet" href="static/css/login_register.css">
+    
+    <style>
+        /* OTP Modal Styles */
+        .otp-modal {
+            display: none; 
+            position: fixed; z-index: 1000; left: 0; top: 0; width: 100%; height: 100%;
+            background-color: rgba(0,0,0,0.8); align-items: center; justify-content: center;
+        }
+        .otp-content {
+            background-color: #fff; padding: 30px; border-radius: 10px; text-align: center; width: 300px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+        }
+        .otp-input {
+            width: 100%; padding: 10px; margin: 15px 0; font-size: 18px; text-align: center; letter-spacing: 5px;
+            border: 1px solid #ddd; border-radius: 5px;
+        }
+        
+        /* Finalize Google Form (Hidden Initially) */
+        #google-finalize-wrapper {
+            display: none; /* Hidden by default */
+            width: 100%;
+        }
+    </style>
 </head>
 <body>
-    <!-- Theme Toggle Button -->
     <div class="theme-toggle" onclick="toggleTheme()">
         <span class="theme-icon"></span>
     </div>
 
-    <!-- Main Container with Sliding Panels -->
+    <div id="otpModal" class="otp-modal">
+        <div class="otp-content">
+            <h2 style="color:#333; margin-bottom:10px;">🔐 Enter OTP</h2>
+            <p style="color:#666; font-size:14px;">We sent a 6-digit code to your email.</p>
+            <input type="text" id="otpInput" class="otp-input" maxlength="6" placeholder="000000">
+            <button class="btn btn-primary" onclick="verifyOtp()" style="width:100%;">Verify</button>
+            <button onclick="closeOtpModal()" style="background:none; border:none; color:#999; margin-top:10px; cursor:pointer;">Cancel</button>
+        </div>
+    </div>
+
     <div class="auth-container" id="authContainer">
         
-        <!-- LOGIN FORM (Left Side Initially) -->
         <div class="form-container sign-in-container">
             <form action="/login" method="POST" class="auth-form" name="sign-in-form" onsubmit="return signInValidateForm()">
                 <h1 class="form-title">✨ Sign In</h1>
-                
                 <div class="input-group">
                     <label for="signin-username" class="label">👤 Username</label>
                     <input type="text" name="username" id="signin-username" class="input-field" placeholder="Enter your username" required>
                 </div>
-
                 <div class="input-group">
-                    <label for="signin-password" class="label">🔒 Password</label>
+                    <label for="signin-password" class="label">🔑 Password</label>
                     <input type="password" name="password" id="signin-password" class="input-field" placeholder="Enter your password" required>
                 </div>
-
-                <a href="#" class="forgot-password">Forgot your password?</a>
-                
                 <button type="submit" class="btn btn-primary">🚀 Sign In</button>
             </form>
         </div>
 
-        <!-- REGISTER FORM (Right Side Initially - Hidden, Scrollable) -->
         <div class="form-container sign-up-container">
             <div class="form-scroll-wrapper">
-                <form action="/register" method="POST" class="auth-form" name="sign-up-form" onsubmit="return signUpValidateForm()">
-                    <h1 class="form-title">📝 Create Account</h1>
+                
+                <div id="standard-signup-wrapper">
+                    <form action="/register" method="POST" class="auth-form" name="sign-up-form" onsubmit="return signUpValidateForm()">
+                        <h1 class="form-title">📝 Create Account</h1>
+
+                        <div class="input-group">
+                            <label for="signup-username" class="label">👤 Username</label>
+                            <input type="text" name="username" id="signup-username" class="input-field" placeholder="Choose a username" required>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="signup-position" class="label">💼 Position</label>
+                            <input type="text" name="position" id="signup-position" class="input-field" placeholder="Your job position" required>
+                        </div>
+
+                        <div class="input-group-row">
+                            <div class="input-group half">
+                                <label for="signup-age" class="label">🎂 Age</label>
+                                <input type="number" name="age" id="signup-age" class="input-field" placeholder="Age" required>
+                            </div>
+                            <div class="input-group half">
+                                <label for="signup-gender" class="label">⚧️ Gender</label>
+                                <select name="gender" id="signup-gender" class="select-field" required>
+                                    <option value="">Select</option>
+                                    <option value="Male">Male</option>
+                                    <option value="Female">Female</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="input-group">
+                            <label for="signup-password" class="label">🔒 Password</label>
+                            <input type="password" name="password" id="signup-password" class="input-field" placeholder="Create a password" required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary">🚀 Sign Up</button>
+                        
+                        <div style="margin-top: 20px; border-top: 1px solid rgba(255,255,255,0.2); padding-top: 20px;">
+                            <p style="text-align: center; margin-bottom: 10px; opacity: 0.7;">Or sign up with</p>
+                            <div id="google_signup_button" style="display: flex; justify-content: center;"></div>
+                        </div>
+                    </form>
+                </div> 
+                <div id="google-finalize-wrapper" class="auth-form">
+                    <h1 class="form-title">🔗 Finalize Account</h1>
+                    <p style="text-align:center; margin-bottom:20px;">Please confirm your details.</p>
                     
-                    <div class="input-group">
-                        <label for="signup-username" class="label">👤 Username</label>
-                        <input type="text" name="username" id="signup-username" class="input-field" placeholder="Choose a username" required>
-                    </div>
-
-                    <div class="input-group">
-                        <label for="signup-position" class="label">💼 Position</label>
-                        <input type="text" name="position" id="signup-position" class="input-field" placeholder="Your job position" required>
-                    </div>
-
-                    <div class="input-group-row">
-                        <div class="input-group half">
-                            <label for="signup-age" class="label">🎂 Age</label>
-                            <input type="number" name="age" id="signup-age" class="input-field" placeholder="Age" required>
+                    <form action="/google_register" method="POST">
+                        <div class="input-group">
+                            <label class="label">👤 Username (Editable)</label>
+                            <input type="text" name="google_username" id="final-google-username" class="input-field" required>
                         </div>
 
-                        <div class="input-group half">
-                            <label for="signup-gender" class="label">⚧️ Gender</label>
-                            <select name="gender" id="signup-gender" class="select-field" required>
-                                <option value="">Select</option>
-                                <option value="Male">Male</option>
-                                <option value="Female">Female</option>
-                                <option value="Other">Other</option>
-                            </select>
+                        <div class="input-group">
+                            <label class="label">📧 Email (Verified)</label>
+                            <input type="email" name="google_email" id="final-google-email" class="input-field" readonly style="opacity: 0.7; cursor: not-allowed;">
                         </div>
-                    </div>
 
-                    <div class="input-group">
-                        <label for="signup-password" class="label">🔒 Password</label>
-                        <input type="password" name="password" id="signup-password" class="input-field" placeholder="Create a password" required>
-                    </div>
+                        <button type="submit" class="btn btn-primary">✅ Complete Sign Up</button>
+                    </form>
+                </div>
 
-                    <button type="submit" class="btn btn-primary">🚀 Sign Up</button>
-                </form>
             </div>
         </div>
 
-        <!-- OVERLAY PANEL (Sliding Panel with Background Images) -->
         <div class="overlay-container">
             <div class="overlay">
-                <!-- Left Panel - Welcome Back -->
                 <div class="overlay-panel overlay-left">
                     <div class="overlay-content">
                         <h1 class="overlay-title">Welcome Back!</h1>
@@ -93,8 +141,6 @@
                         <button class="btn btn-ghost" id="signIn">SIGN IN</button>
                     </div>
                 </div>
-                
-                <!-- Right Panel - Hello Friend -->
                 <div class="overlay-panel overlay-right">
                     <div class="overlay-content">
                         <h1 class="overlay-title">Hello, Friend!</h1>
@@ -106,7 +152,6 @@
         </div>
     </div>
 
-    <!-- Scripts -->
     <script src="static/js/jquery-3.3.1.min.js"></script>
     <script src="static/js/bootstrap.min.js"></script>
     <script src="static/js/as-alert-message.min.js"></script>

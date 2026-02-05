@@ -85,45 +85,46 @@ def logout():
 
 # --- GOOGLE AUTH & OTP ROUTES (NEW!) ---
 
-# 1. Send OTP to the Google Email
 @user_bp.route('/send_verification_otp', methods=['POST'])
 def send_verification_otp():
     data = request.get_json()
     email = data.get('email')
     
     if not email:
-        return jsonify({'success': False, 'message': 'No email provided'})
+        return jsonify({'success': False, 'message': 'Email is required'})
 
     # Generate 6-digit OTP
     otp_code = str(random.randint(100000, 999999))
     
-    # Store in session for verification later
-    session['current_otp'] = otp_code
-    session['otp_email'] = email
-    
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
     try:
-        # Create Email
+        # Save to database (verified=0 by default)
+        sql = "INSERT INTO otp_verifications (email_address, otp_code) VALUES (%s, %s)"
+        cursor.execute(sql, (email, otp_code))
+        connection.commit()
+
+        # Send the Email
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
         msg['To'] = email
-        msg['Subject'] = "Your Task Manager Verification Code"
-        
-        body = f"Hello,\n\nYour verification code is: {otp_code}\n\nPlease enter this code to complete your registration.\n\nBest,\nTask Manager Team"
+        msg['Subject'] = "Task Manager Verification"
+        body = f"Your verification code is: {otp_code}"
         msg.attach(MIMEText(body, 'plain'))
         
-        # Send via Gmail SMTP
         server = smtplib.SMTP('smtp.gmail.com', 587)
         server.starttls()
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
         server.quit()
-        
-        print(f"OTP {otp_code} sent to {email}") # Debugging
+
         return jsonify({'success': True})
-        
     except Exception as e:
-        print(f"Error sending email: {e}")
         return jsonify({'success': False, 'message': str(e)})
+    finally:
+        cursor.close()
+        connection.close()
 
 
 # 2. Verify the OTP

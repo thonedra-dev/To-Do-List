@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, redirect, session
 import mysql.connector
 from user import user_bp  # Import user authentication Blueprint
+from datetime import datetime
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"  # Required for session management
@@ -17,7 +18,7 @@ def get_db_connection():
     )
 
 # Route: Home Page - Fetch Tasks & Completed Tasks
-from datetime import datetime
+
 
 @app.route('/')
 def index():
@@ -29,16 +30,22 @@ def index():
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Fetch the logged-in user's username
-    cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+    # Fetch the logged-in user's username AND profile_pic
+    cursor.execute("SELECT username, profile_pic FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
-    username = user[0] if user else "Unknown"
+    
+    if user:
+        username = user[0]
+        profile_pic = user[1]  # This will be the path like 'uploads/profile_pics/...'
+    else:
+        username = "Unknown"
+        profile_pic = None
 
     cursor.close()
     connection.close()
 
-    # Only pass username to homepage, not the task data
-    return render_template('homepage.html', username=username)
+    # Pass both username and profile_pic to homepage.html
+    return render_template('homepage.html', username=username, profile_pic=profile_pic)
 
 
 @app.route('/task_details')

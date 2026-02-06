@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Profile - {{ user.username }}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/user_profile.css') }}">
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') document.body.classList.add('light-mode');
+        })();
+    </script>
+</head>
+<body>
+    <a href="/" class="back-nav">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"></line><polyline points="12 19 5 12 12 5"></polyline></svg>
+        Back to Dashboard
+    </a>
+
+    <div class="profile-container">
+        <div class="profile-card-header">
+            <div class="profile-main-info">
+                <div class="profile-image-large">
+                    {% if user.profile_pic %}
+                        <img src="{{ url_for('static', filename=user.profile_pic) }}" alt="Profile Picture">
+                    {% else %}
+                        <div class="profile-initial-large">{{ user.initial }}</div>
+                    {% endif %}
+                </div>
+                <div class="profile-titles">
+                    <h1 class="profile-name">{{ user.username }}</h1>
+                    <span class="profile-badge">{{ user.position or 'Member' }}</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="profile-details-grid">
+            <div class="details-section">
+                <h3><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg> Account Details</h3>
+                
+                <div class="detail-item">
+                    <label>Email Address</label>
+                    <p>{{ user.email or 'Not Linked' }}</p>
+                </div>
+
+                <div class="detail-item">
+                    <label>Gender</label>
+                    <p>{{ user.gender or 'Not Specified' }}</p>
+                </div>
+            </div>
+
+            <div class="details-section">
+                <h3><svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg> Professional Info</h3>
+                
+                <div class="detail-item">
+                    <label>Current Position</label>
+                    <p>{{ user.position or 'No Position Set' }}</p>
+                </div>
+
+                <div class="detail-item">
+                    <label>Account Status</label>
+                    <p><span class="status-indicator active"></span> Active User</p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="profile-actions">
+            <button class="btn-edit" onclick="alert('Edit feature coming soon!')">Edit Profile</button>
+            <a href="/logout" class="btn-logout">Logout</a>
+        </div>
+    </div>
+
+    <script>
+        function toggleTheme() {
+            document.body.classList.toggle('light-mode');
+            localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
+        }
+    </script>
+</body>
+</html>

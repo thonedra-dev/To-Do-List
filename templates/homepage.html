@@ -12,6 +12,20 @@
 </script>
     <link rel="stylesheet" href="static/css/homepage.css">
 </head>
+
+<div class="user-flag">
+    <div class="flag-content">
+        <div class="profile-circle">
+            {% if profile_pic %}
+                <img src="{{ url_for('static', filename=profile_pic) }}" alt="Profile">
+            {% else %}
+                <div class="profile-placeholder">{{ username[0]|upper }}</div>
+            {% endif %}
+        </div>
+        <span class="flag-username">{{ username }}</span>
+    </div>
+</div>
+
 <body>
     <!-- Theme Toggle Button -->
     <div class="theme-toggle" onclick="toggleTheme()">

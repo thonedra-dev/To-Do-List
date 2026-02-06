@@ -286,3 +286,44 @@ def check_google_user():
     cursor.close()
     connection.close()
     return jsonify({'exists': False})
+
+# --- Updated Profile Route in user.py ---
+
+@user_bp.route('/profile')
+def user_profile():
+    # 1. Security Check: Is the user logged in?
+    if 'user_id' not in session:
+        return redirect(url_for('user.login'))
+
+    user_id = session['user_id']
+    
+    connection = get_db_connection()
+    # dictionary=True allows us to access data by column names
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        # 2. Fetch everything including Gender and Position
+        # Added: gender, position
+        cursor.execute("SELECT username, email, profile_pic, gender, position FROM users WHERE id = %s", (user_id,))
+        user_data = cursor.fetchone()
+        
+        if not user_data:
+            return "User data not found", 404
+
+        # 3. Handle the "Default Profile Pic" logic (The first letter)
+        # We check if profile_pic is empty or None
+        if not user_data['profile_pic']:
+            user_data['initial'] = user_data['username'][0].upper()
+        else:
+            user_data['initial'] = None
+
+    except Exception as e:
+        print(f"Error fetching profile: {e}")
+        return "Internal Server Error", 500
+    finally:
+        cursor.close()
+        connection.close()
+
+    # 4. Render the template and pass the 'user' dictionary
+    # Now user.gender and user.position will be available in HTML
+    return render_template('user_profile.html', user=user_data)

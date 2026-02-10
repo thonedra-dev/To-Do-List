@@ -19,7 +19,7 @@
     display: flex;
     align-items: center;
     gap: 10px;
-    color: white; /* Matches Dark Mode default */
+    color: white;
     text-decoration: none;
     font-weight: 500;
     transition: 0.3s;
@@ -38,6 +38,7 @@ body.light-mode .back-nav { color: #1f2937; }
     padding: 40px;
     margin-bottom: 24px;
     box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+    position: relative;
 }
 
 body.light-mode .profile-card-header {
@@ -49,19 +50,31 @@ body.light-mode .profile-card-header {
 .profile-main-info { display: flex; align-items: center; gap: 30px; }
 
 .profile-image-large {
-    width: 120px; height: 120px;
+    width: 140px; 
+    height: 140px;
     border-radius: 50%;
     overflow: hidden;
     border: 4px solid var(--accent-primary);
     background: #2c2c2c;
+    position: relative;
 }
+
+body:not(.light-mode) .profile-image-large {
+    border-color: #f97316;
+}
+
 
 .profile-image-large img { width: 100%; height: 100%; object-fit: cover; }
 
 .initial-placeholder-large {
-    width: 100%; height: 100%;
-    display: flex; align-items: center; justify-content: center;
-    font-size: 48px; color: white; font-weight: bold;
+    width: 100%; 
+    height: 100%;
+    display: flex; 
+    align-items: center; 
+    justify-content: center;
+    font-size: 48px; 
+    color: white; 
+    font-weight: bold;
 }
 
 .profile-text-info h1 { color: white; font-size: 32px; margin-bottom: 5px; }
@@ -69,6 +82,130 @@ body.light-mode .profile-card-header {
 
 body.light-mode .profile-text-info h1 { color: #111827; }
 body.light-mode .user-email-sub { color: #6b7280; }
+
+/* --- Edit Icon Button - Top Right of Header Card --- */
+.edit-icon-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(59, 130, 246, 0.15);
+    border: 1.5px solid rgba(59, 130, 246, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #3b82f6;
+}
+
+.edit-icon-btn:hover {
+    background: rgba(59, 130, 246, 0.25);
+    border-color: #3b82f6;
+    transform: scale(1.05);
+}
+
+body.light-mode .edit-icon-btn {
+    background: rgba(59, 130, 246, 0.1);
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+body.light-mode .edit-icon-btn:hover {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: #3b82f6;
+}
+
+/* DARK MODE: Orange color for edit icon */
+body:not(.light-mode) .edit-icon-btn {
+    background: rgba(249, 115, 22, 0.15);
+    border-color: rgba(249, 115, 22, 0.4);
+    color: #f97316;
+}
+
+body:not(.light-mode) .edit-icon-btn:hover {
+    background: rgba(249, 115, 22, 0.25);
+    border-color: #f97316;
+}
+
+.edit-icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* --- Save and Cancel Icon Buttons --- */
+.save-icon-btn {
+    position: absolute;
+    top: 20px;
+    right: 70px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(16, 185, 129, 0.15);
+    border: 1.5px solid rgba(16, 185, 129, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #10b981;
+}
+
+.save-icon-btn:hover {
+    background: rgba(16, 185, 129, 0.25);
+    border-color: #10b981;
+    transform: scale(1.05);
+}
+
+body.light-mode .save-icon-btn {
+    background: rgba(16, 185, 129, 0.1);
+    border-color: rgba(16, 185, 129, 0.3);
+}
+
+body.light-mode .save-icon-btn:hover {
+    background: rgba(16, 185, 129, 0.2);
+    border-color: #10b981;
+}
+
+.cancel-icon-btn {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    background: rgba(239, 68, 68, 0.15);
+    border: 1.5px solid rgba(239, 68, 68, 0.4);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    color: #ef4444;
+}
+
+.cancel-icon-btn:hover {
+    background: rgba(239, 68, 68, 0.25);
+    border-color: #ef4444;
+    transform: scale(1.05);
+}
+
+body.light-mode .cancel-icon-btn {
+    background: rgba(239, 68, 68, 0.1);
+    border-color: rgba(239, 68, 68, 0.3);
+}
+
+body.light-mode .cancel-icon-btn:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: #ef4444;
+}
+
+.save-icon-btn svg,
+.cancel-icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
 
 /* --- Details Grid --- */
 .profile-details-grid {
@@ -88,8 +225,12 @@ body.light-mode .profile-details-grid {
 }
 
 .details-section h3 {
-    display: flex; align-items: center; gap: 10px;
-    color: white; font-size: 18px; margin-bottom: 25px;
+    display: flex; 
+    align-items: center; 
+    gap: 10px;
+    color: white; 
+    font-size: 18px; 
+    margin-bottom: 25px;
     border-bottom: 1px solid rgba(255,255,255,0.1);
     padding-bottom: 10px;
 }
@@ -99,44 +240,294 @@ body.light-mode .details-section h3 {
     border-bottom-color: #eee;
 }
 
-.detail-item { margin-bottom: 20px; }
+.detail-item { 
+    margin-bottom: 20px; 
+}
+
 .detail-item label { 
-    display: block; font-size: 11px; 
-    color: #888; text-transform: uppercase; 
-    letter-spacing: 1px; margin-bottom: 8px; 
+    display: block; 
+    font-size: 11px; 
+    color: #888; 
+    text-transform: uppercase; 
+    letter-spacing: 1px; 
+    margin-bottom: 8px; 
 }
 
-.detail-item p { color: white; font-weight: 500; font-size: 16px; }
-body.light-mode .detail-item p { color: #374151; }
+.detail-item p { 
+    color: white; 
+    font-weight: 500; 
+    font-size: 16px; 
+}
 
+body.light-mode .detail-item p { 
+    color: #374151; 
+}
+
+/* --- Input Styles with Underline --- */
+.detail-item input,
+.detail-item select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 3px solid rgba(59, 130, 246, 0.6);
+    color: white;
+    padding: 12px 0;
+    font-size: 16px;
+    font-weight: 500;
+    outline: none;
+    transition: border-color 0.3s ease;
+    line-height: 1.8;
+}
+
+body.light-mode .detail-item input,
+body.light-mode .detail-item select {
+    color: #374151;
+    border-bottom-color: rgba(59, 130, 246, 0.5);
+}
+
+/* DARK MODE: Orange underline */
+body:not(.light-mode) .detail-item input,
+body:not(.light-mode) .detail-item select {
+    border-bottom-color: rgba(249, 115, 22, 0.6);
+}
+
+/* --- Blinking Animation for Underline --- */
+@keyframes blinkUnderline {
+    0%, 100% {
+        border-bottom-color: rgba(59, 130, 246, 0.9);
+    }
+    50% {
+        border-bottom-color: rgba(59, 130, 246, 0.2);
+    }
+}
+
+@keyframes blinkUnderlineOrange {
+    0%, 100% {
+        border-bottom-color: rgba(249, 115, 22, 0.9);
+    }
+    50% {
+        border-bottom-color: rgba(249, 115, 22, 0.2);
+    }
+}
+
+.detail-item input.edit-active,
+.detail-item select.edit-active {
+    animation: blinkUnderline 1.5s ease-in-out infinite;
+}
+
+/* DARK MODE: Orange blinking */
+body:not(.light-mode) .detail-item input.edit-active,
+body:not(.light-mode) .detail-item select.edit-active {
+    animation: blinkUnderlineOrange 1.5s ease-in-out infinite;
+}
+
+.detail-item input:focus,
+.detail-item select:focus {
+    border-bottom-color: #3b82f6;
+    animation: none;
+}
+
+body.light-mode .detail-item input:focus,
+body.light-mode .detail-item select:focus {
+    border-bottom-color: #3b82f6;
+}
+
+/* DARK MODE: Orange focus */
+body:not(.light-mode) .detail-item input:focus,
+body:not(.light-mode) .detail-item select:focus {
+    border-bottom-color: #f97316;
+}
+
+/* --- Status Indicator --- */
 .status-indicator { 
-    display: inline-block; width: 10px; height: 10px; 
-    border-radius: 50%; background: #10b981; margin-right: 8px; 
+    display: inline-block; 
+    width: 10px; 
+    height: 10px; 
+    border-radius: 50%; 
+    background: #10b981; 
+    margin-right: 8px; 
 }
 
-/* --- Actions --- */
-.profile-actions { margin-top: 30px; display: flex; gap: 15px; }
-
-.btn-edit {
-    background: var(--accent-primary);
-    color: white; border: none;
-    padding: 12px 35px; border-radius: 12px;
-    font-weight: 600; cursor: pointer; transition: 0.3s;
+/* --- Profile Picture Upload Section --- */
+.profile-pic-upload-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    display: none;
 }
 
-.btn-edit:hover { background: var(--accent-secondary); transform: translateY(-2px); }
+body.light-mode .profile-pic-upload-section {
+    border-top-color: #e5e7eb;
+}
+
+.profile-pic-upload-section.active {
+    display: block;
+}
+
+.upload-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    color: #3b82f6;
+    cursor: pointer;
+    font-weight: 500;
+    font-size: 15px;
+    transition: 0.3s;
+    padding: 15px;
+    border: 2px dotted rgba(59, 130, 246, 0.4);
+    border-radius: 8px;
+}
+
+.upload-link:hover {
+    color: #60a5fa;
+    border-color: #3b82f6;
+    gap: 12px;
+}
+
+body.light-mode .upload-link {
+    border-color: rgba(59, 130, 246, 0.3);
+}
+
+body.light-mode .upload-link:hover {
+    border-color: #3b82f6;
+}
+
+/* DARK MODE: Orange upload link */
+body:not(.light-mode) .upload-link {
+    color: #f97316;
+    border-color: rgba(249, 115, 22, 0.4);
+}
+
+body:not(.light-mode) .upload-link:hover {
+    color: #fb923c;
+    border-color: #f97316;
+}
+
+.upload-link svg {
+    width: 18px;
+    height: 18px;
+}
+
+/* --- Profile Image Preview Badge --- */
+.image-preview-badge {
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    width: 32px;
+    height: 32px;
+    background: #10b981;
+    border-radius: 50%;
+    border: 3px solid rgba(30, 30, 30, 0.8);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    color: white;
+}
+
+body.light-mode .image-preview-badge {
+    border-color: rgba(255, 255, 255, 0.8);
+}
+
+.image-preview-badge.active {
+    display: flex;
+}
+
+.image-preview-badge svg {
+    width: 16px;
+    height: 16px;
+}
+
+/* --- Actions (Logout Button) --- */
+.profile-actions { 
+    margin-top: 30px; 
+    display: flex; 
+    gap: 15px; 
+}
 
 .btn-logout {
     background: rgba(239, 68, 68, 0.1);
-    color: #ef4444; border: 1.5px solid #ef4444;
-    padding: 12px 35px; border-radius: 12px;
-    font-weight: 600; text-decoration: none; transition: 0.3s;
+    color: #ef4444; 
+    border: 1.5px solid #ef4444;
+    padding: 12px 35px; 
+    border-radius: 12px;
+    font-weight: 600; 
+    text-decoration: none; 
+    transition: 0.3s;
+    display: inline-block;
 }
 
-.btn-logout:hover { background: #ef4444; color: white; }
+.btn-logout:hover { 
+    background: #ef4444; 
+    color: white; 
+}
 
-/* Responsive */
+/* --- Utilities --- */
+.hidden {
+    display: none !important;
+}
+
+/* --- Toast Notification Styles --- */
+.toast {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    background: rgba(30, 30, 30, 0.95);
+    backdrop-filter: blur(10px);
+    color: white;
+    padding: 16px 24px;
+    border-radius: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    z-index: 1000;
+    animation: slideIn 0.3s ease-out;
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+body.light-mode .toast {
+    background: white;
+    border-color: #e5e7eb;
+    color: #111827;
+}
+
+.toast.success {
+    border-left: 4px solid #10b981;
+}
+
+.toast.error {
+    border-left: 4px solid #ef4444;
+}
+
+@keyframes slideIn {
+    from {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+    to {
+        transform: translateX(0);
+        opacity: 1;
+    }
+}
+
+@keyframes slideOut {
+    to {
+        transform: translateX(400px);
+        opacity: 0;
+    }
+}
+
+.toast.hiding {
+    animation: slideOut 0.3s ease-out forwards;
+}
+
+/* --- Responsive --- */
 @media (max-width: 768px) {
-    .profile-details-grid { grid-template-columns: 1fr; }
-    .profile-main-info { flex-direction: column; text-align: center; }
+    .profile-details-grid { 
+        grid-template-columns: 1fr; 
+    }
+    .profile-main-info { 
+        flex-direction: column; 
+        text-align: center; 
+    }
 }

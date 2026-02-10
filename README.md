@@ -1,4 +1,4 @@
-# 📝 Flask Task Manager
+# 📝Task Manager
 
 <div align="center">
 

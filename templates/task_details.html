@@ -13,13 +13,11 @@
     <link rel="stylesheet" href="static/css/task_details.css">
 </head>
 <body>
-    <!-- Theme Toggle Button -->
     <div class="theme-toggle" onclick="toggleTheme()">
         <span>Theme</span>
     </div>
 
     <div class="main-container">
-        <!-- Header with inline navigation -->
         <div class="page-header">
             <div class="header-left">
                 <h1 class="page-title">Task Details</h1>
@@ -50,7 +48,6 @@
             </div>
         </div>
 
-        <!-- Task Table -->
         <div class="table-container {% if table_type == 'tasks' %}visible{% else %}hidden{% endif %}" id="taskTableContainer">
             <div class="table-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -93,7 +90,6 @@
           data-task-name="{{ task[1] }}"
           data-created-at="{{ task[3] }}"
           data-due-date="{% if task[4] and task[4] != '' %}{{ task[4] }}{% else %}No Due Date{% endif %}"
-          data-time-left="{{ task[5] }}"
           data-has-unfinished-steps="{% if task[0] in tasks_with_unfinished_steps %}true{% else %}false{% endif %}">
         </div>
       </td>
@@ -104,7 +100,6 @@
             </div>
         </div>
 
-        <!-- Completed Tasks Table -->
         <div class="table-container {% if table_type == 'completed' %}visible{% else %}hidden{% endif %}" id="completedTableContainer">
             <div class="table-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -138,7 +133,6 @@
         </div>
     </div>
 
-    <!-- Full Task Text Popup -->
     <div id="fullTaskPopup" class="popup-overlay" onclick="closeFullTaskPopup()">
         <div class="popup-content small-popup" onclick="event.stopPropagation()">
             <div class="popup-header">
@@ -160,7 +154,6 @@
         </div>
     </div>
 
-    <!-- Task Info Popup -->
     <div id="taskInfoPopup" class="popup-overlay" onclick="closeTaskInfoPopup()">
         <div class="popup-content info-popup" onclick="event.stopPropagation()">
             <div class="popup-header">
@@ -238,7 +231,6 @@
                     </div>
                 </div>
 
-                <!-- Action Buttons -->
                 <div class="action-buttons">
                     <a id="statusBtn" href="#" class="action-btn status-btn">
                         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -323,7 +315,11 @@
             document.getElementById('infoTaskName').textContent = taskData.dataset.taskName;
             document.getElementById('infoCreatedAt').textContent = taskData.dataset.createdAt;
             document.getElementById('infoDueDate').textContent = taskData.dataset.dueDate;
-            document.getElementById('infoTimeLeft').textContent = taskData.dataset.timeLeft;
+            
+            // --- CRITICAL FIX: Pass the due date to the Timer Element ---
+            const timerElement = document.getElementById('infoTimeLeft');
+            timerElement.setAttribute('data-duedate', taskData.dataset.dueDate);
+            updateTimeRemaining(); // Trigger calculation immediately
             
             // Set status button link
             document.getElementById('statusBtn').href = `/setup_step/${currentTaskId}`;
@@ -367,27 +363,35 @@
             }
         }
 
+        // --- IMPROVED REAL-TIME COUNTDOWN ENGINE ---
         function updateTimeRemaining() {
             const timeCells = document.querySelectorAll(".time-remaining");
             const now = new Date();
 
             timeCells.forEach(cell => {
                 const dueDateStr = cell.getAttribute("data-duedate");
-                if (!dueDateStr || dueDateStr === "None") {
+                
+                // Handle cases with no due date
+                if (!dueDateStr || dueDateStr === "None" || dueDateStr === "No Due Date" || dueDateStr === "") {
                     cell.innerHTML = "No Due Date";
+                    cell.style.color = "inherit";
                     return;
                 }
 
                 const dueDate = new Date(dueDateStr);
                 const diffTime = dueDate - now;
 
-                if (diffTime < 0) {
+                if (diffTime <= 0) {
                     cell.innerHTML = "<span style='color: #ef4444; font-weight: 700;'>⚠️ Overdue</span>";
                 } else {
+                    // Precise Calculation
                     const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
                     const diffHours = Math.floor((diffTime % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
                     const diffMinutes = Math.floor((diffTime % (1000 * 60 * 60)) / (1000 * 60));
-                    cell.innerHTML = `⏰ ${diffDays}d ${diffHours}h ${diffMinutes}m`;
+                    const diffSeconds = Math.floor((diffTime % (1000 * 60)) / 1000); // Added Seconds
+                    
+                    cell.innerHTML = `⏰ ${diffDays}d ${diffHours}h ${diffMinutes}m ${diffSeconds}s`;
+                    cell.style.color = "var(--accent-primary)"; // Assuming you want it to pop slightly
                 }
             });
         }

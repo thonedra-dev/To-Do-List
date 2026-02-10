@@ -5,47 +5,48 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Task Manager</title>
     <script>
-  (function () {
-    const savedTheme = localStorage.getItem('theme');
-    if (savedTheme === 'light') document.body.classList.add('light-mode');
-  })();
-</script>
-    <link rel="stylesheet" href="static/css/homepage.css">
+        (function () {
+            const savedTheme = localStorage.getItem('theme');
+            if (savedTheme === 'light') document.body.classList.add('light-mode');
+        })();
+    </script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
 </head>
 
 <a href="/profile" style="text-decoration: none;">
-<div class="user-flag">
-    <div class="flag-content">
-        <div class="profile-circle">
-            {% if profile_pic %}
-                <img src="{{ url_for('static', filename=profile_pic) }}" alt="Profile">
-            {% else %}
-                <div class="profile-placeholder">{{ username[0]|upper }}</div>
+    <div class="user-flag">
+        <div class="flag-content" style="position: relative;"> 
+            <div class="profile-circle">
+                {% if profile_pic %}
+                    <img src="{{ url_for('static', filename=profile_pic) }}" alt="Profile">
+                {% else %}
+                    <div class="profile-placeholder">{{ username[0]|upper }}</div>
+                {% endif %}
+            </div>
+            <span class="flag-username">{{ username }}</span>
+
+            {% if prompts %}
+            <div id="speech-bubble" class="speech-bubble">
+                <p id="bubble-text" style="margin: 0;"></p>
+            </div>
             {% endif %}
         </div>
-        <span class="flag-username">{{ username }}</span>
     </div>
-</div>
 </a>
 
 <body>
-    <!-- Theme Toggle Button -->
     <div class="theme-toggle" onclick="toggleTheme()">
         <span>Theme</span>
     </div>
 
     <div class="main-container">
-        <!-- Header -->
         <div class="page-header">
             <h1 class="page-title">Task Manager</h1>
             <p class="page-subtitle">Manage Your Workflow Here!</p>
         </div>
 
-        <!-- Task Section -->
         <div class="task-section">
-            <!-- Task Cards -->
             <div class="task-options">
-                <!-- Add Task -->
                 <div class="task-card" onclick="showTaskPopup()">
                     <div class="card-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -58,7 +59,6 @@
                     <p>Create a new task and set steps</p>
                 </div>
 
-                <!-- View Task List -->
                 <a href="/task_details?table=tasks" class="task-card-link">
                     <div class="task-card">
                         <div class="card-icon">
@@ -74,7 +74,6 @@
                     </div>
                 </a>
 
-                <!-- View Completed Tasks -->
                 <a href="/task_details?table=completed" class="task-card-link">
                     <div class="task-card">
                         <div class="card-icon">
@@ -90,7 +89,6 @@
             </div>
         </div>
 
-        <!-- Task Input Popup (First Step) -->
         <div id="taskInputPopup">
             <div class="popup-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -109,7 +107,6 @@
             </form>
         </div>
 
-        <!-- Due Date Setup Popup -->
         <div id="dueDatePopup">
             <div class="popup-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -127,7 +124,6 @@
             </div>
         </div>
 
-        <!-- Step Setup Popup -->
         <div id="stepSetupPopup">
             <div class="popup-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -156,91 +152,9 @@
         </div>
     </div>
 
-    <script>
-        // Theme toggle functionality
-        function toggleTheme() {
-            document.body.classList.toggle('light-mode');
-            if (document.body.classList.contains('light-mode')) {
-                localStorage.setItem('theme', 'light');
-            } else {
-                localStorage.setItem('theme', 'dark');
-            }
-        }
+<div id="prompt-data" data-prompts='{{ prompts | tojson | safe }}'></div>
 
-        // Load saved theme
-        window.addEventListener('DOMContentLoaded', () => {
-            const savedTheme = localStorage.getItem('theme');
-            if (savedTheme === 'light') document.body.classList.add('light-mode');
-        });
+<script src="{{ url_for('static', filename='js/homepage.js') }}"></script>
 
-        function showTaskPopup() {
-            document.getElementById("taskInputPopup").style.display = "block";
-        }
-
-        function closeTaskPopup() {
-            document.getElementById("taskInputPopup").style.display = "none";
-            document.getElementById("task_name").value = "";
-        }
-
-        function showDueDatePopupUI() {
-            const taskName = document.getElementById("task_name").value;
-            if (taskName.trim() === "") {
-                alert("Please enter a task name first");
-                return;
-            }
-            document.getElementById("taskInputPopup").style.display = "none";
-            document.getElementById("dueDatePopup").style.display = "block";
-        }
-
-        function closeDueDatePopup() {
-            document.getElementById("dueDatePopup").style.display = "none";
-        }
-
-        function submitTaskWithDueDate() {
-            document.getElementById("dueDatePopup").style.display = "none";
-            document.getElementById("stepSetupPopup").style.display = "block";
-        }
-
-        function submitTaskWithoutDueDate() {
-            document.getElementById("due_date").value = "";
-            document.getElementById("dueDatePopup").style.display = "none";
-            document.getElementById("stepSetupPopup").style.display = "block";
-        }
-
-        function closeStepSetupPopup() {
-            document.getElementById("stepSetupPopup").style.display = "none";
-            document.getElementById("taskForm").submit();
-        }
-
-        function addStepToList() {
-            const stepDesc = document.getElementById("step_description").value;
-            const difficulty = document.getElementById("difficulty").value;
-            
-            if (stepDesc.trim() !== "") {
-                const stepList = document.getElementById("stepList");
-                const listItem = document.createElement("li");
-                
-                // Add icon based on difficulty
-                let icon = '';
-                switch(difficulty) {
-                    case 'Easy': icon = '<span class="step-badge easy">Easy</span>'; break;
-                    case 'Normal': icon = '<span class="step-badge normal">Normal</span>'; break;
-                    case 'Hard': icon = '<span class="step-badge hard">Hard</span>'; break;
-                    case 'Insane': icon = '<span class="step-badge insane">Insane</span>'; break;
-                }
-                
-                listItem.innerHTML = `<span class="step-text">${stepDesc}</span> ${icon}`;
-                stepList.appendChild(listItem);
-                
-                const stepInput = document.createElement("input");
-                stepInput.type = "hidden";
-                stepInput.name = "steps[]";
-                stepInput.value = `${stepDesc}|${difficulty}`;
-                document.getElementById("taskForm").appendChild(stepInput);
-                
-                document.getElementById("step_description").value = "";
-            }
-        }
-    </script>
 </body>
 </html>

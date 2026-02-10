@@ -54,25 +54,25 @@ def task_details():
         return redirect('/login')
 
     user_id = session['user_id']
-    table_type = request.args.get('table', 'tasks')  # Get which table to show
+    table_type = request.args.get('table', 'tasks') 
 
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Fetch the logged-in user's username
+    # 1. Fetch Username
     cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     username = user[0] if user else "Unknown"
 
-    # Fetch tasks assigned to the logged-in user, including due_date
+    # 2. Fetch Tasks (Raw data - no Python calculation)
     cursor.execute("SELECT id, task, completed, created_at, due_date FROM tasks WHERE user_id = %s", (user_id,))
     tasks = cursor.fetchall()
 
-    # Fetch completed tasks
+    # 3. Fetch Completed Tasks
     cursor.execute("SELECT task, completed_at FROM completed_tasks WHERE fid IN (SELECT id FROM tasks WHERE user_id = %s)", (user_id,))
     completed_tasks = cursor.fetchall()
 
-    # Fetch tasks with unfinished steps
+    # 4. Fetch tasks with unfinished steps
     cursor.execute("""
         SELECT DISTINCT fid 
         FROM steps 
@@ -81,36 +81,16 @@ def task_details():
     """, (user_id,))
     tasks_with_unfinished_steps = set(row[0] for row in cursor.fetchall())
 
-    # ✅ Calculate time remaining for each task
-    tasks_with_remaining_time = []
-    today = datetime.now().date()
-
-    for task in tasks:
-        task_id, task_name, completed, created_at, due_date = task
-        if due_date:
-            due_date_obj = datetime.strptime(str(due_date), "%Y-%m-%d").date()
-            remaining_days = (due_date_obj - today).days
-            if remaining_days < 0:
-                time_remaining = "Overdue"
-            else:
-                time_remaining = f"{remaining_days} days left"
-        else:
-            time_remaining = "No Due Date"
-
-        # ✅ Pass all data correctly
-        tasks_with_remaining_time.append((task_id, task_name, completed, created_at, due_date, time_remaining))
-
     cursor.close()
     connection.close()
 
-    # ✅ Pass everything to `task_details.html`
     return render_template(
         'task_details.html', 
         username=username,
-        tasks=tasks_with_remaining_time,
+        tasks=tasks, # Passing raw tuples directly
         completed_tasks=completed_tasks,
         tasks_with_unfinished_steps=tasks_with_unfinished_steps,
-        table_type=table_type  # Pass which table to show
+        table_type=table_type
     )
 
 

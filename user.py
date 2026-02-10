@@ -327,3 +327,68 @@ def user_profile():
     # 4. Render the template and pass the 'user' dictionary
     # Now user.gender and user.position will be available in HTML
     return render_template('user_profile.html', user=user_data)
+
+# --- Add this inside user.py ---
+
+@user_bp.route('/update_profile', methods=['POST'])
+def update_profile():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id = session['user_id']
+    
+    # Get text data
+    new_username = request.form.get('username')
+    new_email = request.form.get('email')
+    new_gender = request.form.get('gender')
+    new_position = request.form.get('position')
+    
+    # Get file data (optional)
+    file = request.files.get('profile_pic')
+    
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    
+    try:
+        # 1. Update Text Fields
+        query = """
+            UPDATE users 
+            SET username = %s, email = %s, gender = %s, position = %s 
+            WHERE id = %s
+        """
+        cursor.execute(query, (new_username, new_email, new_gender, new_position, user_id))
+        
+        # 2. Handle Profile Pic Upload (if provided)
+        image_url = None
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            # Rename file to user_id_filename to avoid collisions
+            unique_filename = f"{user_id}_{int(random.random()*1000)}_{filename}"
+            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+            
+            # Create folder if not exists
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
+                
+            file.save(filepath)
+            
+            # Save RELATIVE path to DB (static/uploads/...)
+            db_path = f"uploads/profile_pics/{unique_filename}"
+            
+            cursor.execute("UPDATE users SET profile_pic = %s WHERE id = %s", (db_path, user_id))
+            image_url = url_for('static', filename=db_path)
+
+        connection.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Profile Updated!',
+            'new_image_url': image_url 
+        })
+
+    except Exception as e:
+        print(f"Update Error: {e}")
+        return jsonify({'success': False, 'message': 'Database Error'}), 500
+    finally:
+        cursor.close()
+        connection.close()

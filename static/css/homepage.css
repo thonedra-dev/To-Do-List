@@ -740,3 +740,27 @@ body.light-mode .profile-circle {
 body.light-mode .flag-username {
     color: var(--accent-primary); /* Light mode matching text */
 }
+
+.speech-bubble {
+    position: absolute;
+    left: 110%; /* Positions it to the right of the name */
+    background: white;
+    border-radius: 15px;
+    padding: 10px 15px;
+    color: #333;
+    min-width: 180px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+    font-size: 0.9rem;
+    z-index: 100;
+}
+/* The little triangle pointing to the user */
+.speech-bubble::after {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 50%;
+    transform: translateY(-50%);
+    border-width: 5px 10px 5px 0;
+    border-style: solid;
+    border-color: transparent white transparent transparent;
+}

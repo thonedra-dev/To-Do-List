@@ -30,13 +30,28 @@ def index():
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # Fetch the logged-in user's username AND profile_pic
-    cursor.execute("SELECT username, profile_pic FROM users WHERE id = %s", (user_id,))
+    # 1. We use SELECT * to fetch all columns so we can check for NULLs
+    cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     
+    prompts = [] # This list will hold our dialogue messages
+
     if user:
-        username = user[0]
-        profile_pic = user[1]  # This will be the path like 'uploads/profile_pics/...'
+        # Index mapping based on your DB table: 
+        # 0:id, 1:username, 2:email, 3:position, 4:age, 5:gender, 6:password, 7:profile_pic
+        username = user[1]
+        email = user[2]
+        profile_pic = user[7]
+
+        # First Check: Specifically check if email is NULL
+        if email is None:
+            prompts.append("Please verify your email address to secure your account!")
+
+        # Second Check: Check if ANY column in the database has a NULL (None) value
+        # This includes position, age, gender, etc.
+        if None in user:
+            prompts.append("Finish setting up your account for full functionality.")
+            
     else:
         username = "Unknown"
         profile_pic = None
@@ -44,8 +59,11 @@ def index():
     cursor.close()
     connection.close()
 
-    # Pass both username and profile_pic to homepage.html
-    return render_template('homepage.html', username=username, profile_pic=profile_pic)
+    # Pass username, profile_pic, AND the list of prompts to the template
+    return render_template('homepage.html', 
+                           username=username, 
+                           profile_pic=profile_pic, 
+                           prompts=prompts)
 
 
 @app.route('/task_details')

@@ -22,36 +22,34 @@ def get_db_connection():
 
 @app.route('/')
 def index():
-    if 'user_id' not in session:  # Check if user is logged in
-        return redirect('/login')  # Redirect to login if not
+    if 'user_id' not in session:
+        return redirect('/login')
 
     user_id = session['user_id']
-
     connection = get_db_connection()
     cursor = connection.cursor()
 
-    # 1. We use SELECT * to fetch all columns so we can check for NULLs
+    # Fetch all columns to check for NULLs
     cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
     user = cursor.fetchone()
     
-    prompts = [] # This list will hold our dialogue messages
+    prompts = []
 
     if user:
-        # Index mapping based on your DB table: 
-        # 0:id, 1:username, 2:email, 3:position, 4:age, 5:gender, 6:password, 7:profile_pic
-        username = user[1]
-        email = user[2]
-        profile_pic = user[7]
+        username = user[1] #
+        email = user[2] #
+        profile_pic = user[7] #
 
-        # First Check: Specifically check if email is NULL
+        # Short, attractive prompts with emojis
         if email is None:
-            prompts.append("Please verify your email address to secure your account!")
-
-        # Second Check: Check if ANY column in the database has a NULL (None) value
-        # This includes position, age, gender, etc.
-        if None in user:
-            prompts.append("Finish setting up your account for full functionality.")
+            prompts.append("Verify Email ⚡")
+        
+        # Check if age (4), gender (5), or position (3) is missing
+        if None in (user[3], user[4], user[5]):
+            prompts.append("Setup Profile 🛠️")
             
+        if not prompts:
+            prompts.append(f"Ready to work, {user[1]}? 🚀")
     else:
         username = "Unknown"
         profile_pic = None
@@ -59,12 +57,7 @@ def index():
     cursor.close()
     connection.close()
 
-    # Pass username, profile_pic, AND the list of prompts to the template
-    return render_template('homepage.html', 
-                           username=username, 
-                           profile_pic=profile_pic, 
-                           prompts=prompts)
-
+    return render_template('homepage.html', username=username, profile_pic=profile_pic, prompts=prompts)
 
 @app.route('/task_details')
 def task_details():

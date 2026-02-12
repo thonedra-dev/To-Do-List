@@ -288,13 +288,13 @@ def check_google_user():
     return jsonify({'exists': False})
 
 # --- Add this helper function somewhere in user.py (e.g., before update_profile) ---
+# --- Place this helper function above the update_profile route ---
 def send_security_alert(to_email, username):
     try:
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
         msg['To'] = to_email
         msg['Subject'] = "Security Alert: Email Address Changed"
-        
         body = f"Hello {username},\n\nYour account email address was just changed. If this was you, you can ignore this message.\n\nIf you did not authorize this change, please contact support immediately."
         msg.attach(MIMEText(body, 'plain'))
         
@@ -303,11 +303,31 @@ def send_security_alert(to_email, username):
         server.login(SENDER_EMAIL, SENDER_PASSWORD)
         server.send_message(msg)
         server.quit()
-        print(f"Security alert sent to {to_email}")
     except Exception as e:
         print(f"Failed to send security alert: {e}")
 
-# --- Updated Profile Route in user.py ---
+@user_bp.route('/profile')
+def user_profile():
+    if 'user_id' not in session:
+        return redirect(url_for('user.login'))
+
+    user_id = session['user_id']
+    connection = get_db_connection()
+    # Using dictionary=True allows us to access columns by name (e.g., user['username'])
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user:
+            return redirect(url_for('user.login'))
+
+        return render_template('user_profile.html', user=user)
+    finally:
+        cursor.close()
+        connection.close()
+
 @user_bp.route('/update_profile', methods=['POST'])
 def update_profile():
     if 'user_id' not in session:
@@ -315,23 +335,23 @@ def update_profile():
 
     user_id = session['user_id']
     
-    # Get text data
+    # Get text data from the form
     new_username = request.form.get('username')
     new_email = request.form.get('email')
     new_gender = request.form.get('gender')
     new_position = request.form.get('position')
     
-    # Get the OTP code sent from frontend (if email changed)
+    # Get the OTP code sent from the frontend (only if email changed)
     otp_code = request.form.get('otp_code')
     
-    # Get file data
+    # Get the file data for profile picture
     file = request.files.get('profile_pic')
     
     connection = get_db_connection()
-    cursor = connection.cursor(dictionary=True) # Use dictionary cursor for easier access
+    cursor = connection.cursor(dictionary=True)
     
     try:
-        # 1. Fetch CURRENT user data to compare
+        # 1. Fetch CURRENT user data to compare changes
         cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
         current_user = cursor.fetchone()
         
@@ -340,16 +360,13 @@ def update_profile():
 
         current_email = current_user['email']
         
-        # 2. Security Check: If email is changing, VERIFY OTP
+        # 2. Security Logic: If the email address is being changed
         if new_email != current_email:
-            # If user is clearing the email (setting to empty), we might allow that or block it.
-            # Assuming we want to verify any *new* valid email.
             if new_email: 
                 if not otp_code:
                     return jsonify({'success': False, 'message': 'Email changed but verification failed (No OTP provided).'}), 400
                 
-                # Verify the OTP against the NEW email
-                # Check for the latest unverified OTP for the new_email
+                # Verify the OTP against the NEW email address in the database
                 cursor.execute("""
                     SELECT otp_id FROM otp_verifications 
                     WHERE email_address = %s AND otp_code = %s AND verified = 0 
@@ -361,14 +378,14 @@ def update_profile():
                 if not otp_result:
                     return jsonify({'success': False, 'message': 'Invalid Verification Code.'}), 400
                 
-                # Mark OTP as used
+                # Mark the OTP as used
                 cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE otp_id = %s", (otp_result['otp_id'],))
                 
-                # 3. If there was an OLD email (not first time), send security alert
+                # 3. If there was an old verified email, send a security alert to it
                 if current_email:
                     send_security_alert(current_email, current_user['username'])
 
-        # 4. Proceed with Update
+        # 4. Update the basic user info
         query = """
             UPDATE users 
             SET username = %s, email = %s, gender = %s, position = %s 
@@ -376,7 +393,7 @@ def update_profile():
         """
         cursor.execute(query, (new_username, new_email, new_gender, new_position, user_id))
         
-        # 5. Handle Profile Pic Upload (Standard logic)
+        # 5. Handle Profile Picture Upload
         image_url = None
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -389,6 +406,7 @@ def update_profile():
             file.save(filepath)
             db_path = f"uploads/profile_pics/{unique_filename}"
             
+            # Update the profile_pic path in the database
             cursor.execute("UPDATE users SET profile_pic = %s WHERE id = %s", (db_path, user_id))
             image_url = url_for('static', filename=db_path)
 
@@ -403,69 +421,6 @@ def update_profile():
     except Exception as e:
         print(f"Update Error: {e}")
         return jsonify({'success': False, 'message': f'Database Error: {str(e)}'}), 500
-    finally:
-        cursor.close()
-        connection.close()
-
-@user_bp.route('/update_profile', methods=['POST'])
-def update_profile():
-    if 'user_id' not in session:
-        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
-
-    user_id = session['user_id']
-    
-    # Get text data
-    new_username = request.form.get('username')
-    new_email = request.form.get('email')
-    new_gender = request.form.get('gender')
-    new_position = request.form.get('position')
-    
-    # Get file data (optional)
-    file = request.files.get('profile_pic')
-    
-    connection = get_db_connection()
-    cursor = connection.cursor()
-    
-    try:
-        # 1. Update Text Fields
-        query = """
-            UPDATE users 
-            SET username = %s, email = %s, gender = %s, position = %s 
-            WHERE id = %s
-        """
-        cursor.execute(query, (new_username, new_email, new_gender, new_position, user_id))
-        
-        # 2. Handle Profile Pic Upload (if provided)
-        image_url = None
-        if file and allowed_file(file.filename):
-            filename = secure_filename(file.filename)
-            # Rename file to user_id_filename to avoid collisions
-            unique_filename = f"{user_id}_{int(random.random()*1000)}_{filename}"
-            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
-            
-            # Create folder if not exists
-            if not os.path.exists(UPLOAD_FOLDER):
-                os.makedirs(UPLOAD_FOLDER)
-                
-            file.save(filepath)
-            
-            # Save RELATIVE path to DB (static/uploads/...)
-            db_path = f"uploads/profile_pics/{unique_filename}"
-            
-            cursor.execute("UPDATE users SET profile_pic = %s WHERE id = %s", (db_path, user_id))
-            image_url = url_for('static', filename=db_path)
-
-        connection.commit()
-        
-        return jsonify({
-            'success': True, 
-            'message': 'Profile Updated!',
-            'new_image_url': image_url 
-        })
-
-    except Exception as e:
-        print(f"Update Error: {e}")
-        return jsonify({'success': False, 'message': 'Database Error'}), 500
     finally:
         cursor.close()
         connection.close()

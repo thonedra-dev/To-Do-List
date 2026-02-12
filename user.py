@@ -328,6 +328,56 @@ def user_profile():
         cursor.close()
         connection.close()
 
+# ==============================================================================
+# NEW ROUTE: Send OTP to OLD EMAIL for verification before changing email
+# ==============================================================================
+@user_bp.route('/verify_old_email_google', methods=['POST'])
+def verify_old_email_google():
+    """
+    Verify that the user owns the old email by checking if they can 
+    sign in with Google using that email address.
+    """
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+    
+    data = request.get_json()
+    google_email = data.get('email')
+    
+    if not google_email:
+        return jsonify({'success': False, 'message': 'Email is required'})
+    
+    user_id = session['user_id']
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    
+    try:
+        # Get the user's current email
+        cursor.execute("SELECT email FROM users WHERE id = %s", (user_id,))
+        user = cursor.fetchone()
+        
+        if not user or not user['email']:
+            return jsonify({'success': False, 'message': 'No email found'})
+        
+        current_email = user['email']
+        
+        # Verify that the Google email matches the current email
+        if google_email.lower() != current_email.lower():
+            return jsonify({'success': False, 'message': 'Email does not match your current email'})
+        
+        # Success! They verified via Google
+        return jsonify({'success': True})
+        
+    except Exception as e:
+        print(f"Error verifying old email with Google: {e}")
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ==============================================================================
+# UPDATED ROUTE: Modified update_profile with two-step email verification
+# ==============================================================================
 @user_bp.route('/update_profile', methods=['POST'])
 def update_profile():
     if 'user_id' not in session:
@@ -341,8 +391,11 @@ def update_profile():
     new_gender = request.form.get('gender')
     new_position = request.form.get('position')
     
-    # Get the OTP code sent from the frontend (only if email changed)
-    otp_code = request.form.get('otp_code')
+    # Get verification status from Google Sign-In (for OLD email)
+    old_email_verified = request.form.get('old_email_verified') == 'true'
+    
+    # Get OTP code for NEW email
+    new_email_otp = request.form.get('new_email_otp')
     
     # Get the file data for profile picture
     file = request.files.get('profile_pic')
@@ -360,30 +413,34 @@ def update_profile():
 
         current_email = current_user['email']
         
-        # 2. Security Logic: If the email address is being changed
-        if new_email != current_email:
-            if new_email: 
-                if not otp_code:
-                    return jsonify({'success': False, 'message': 'Email changed but verification failed (No OTP provided).'}), 400
-                
-                # Verify the OTP against the NEW email address in the database
-                cursor.execute("""
-                    SELECT otp_id FROM otp_verifications 
-                    WHERE email_address = %s AND otp_code = %s AND verified = 0 
-                    ORDER BY otp_id DESC LIMIT 1
-                """, (new_email, otp_code))
-                
-                otp_result = cursor.fetchone()
-                
-                if not otp_result:
-                    return jsonify({'success': False, 'message': 'Invalid Verification Code.'}), 400
-                
-                # Mark the OTP as used
-                cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE otp_id = %s", (otp_result['otp_id'],))
-                
-                # 3. If there was an old verified email, send a security alert to it
-                if current_email:
-                    send_security_alert(current_email, current_user['username'])
+        # 2. SECURITY LOGIC: If the email address is being changed
+        if new_email != current_email and new_email:
+            # Step 1: Check if old email was verified via Google Sign-In
+            if current_email and not old_email_verified:
+                return jsonify({'success': False, 'message': 'Old email verification required'}), 400
+            
+            # Step 2: Verify NEW email OTP code
+            if not new_email_otp:
+                return jsonify({'success': False, 'message': 'New email verification required'}), 400
+            
+            # Verify the NEW email OTP using your existing logic
+            cursor.execute("""
+                SELECT otp_id FROM otp_verifications 
+                WHERE email_address = %s AND otp_code = %s AND verified = 0 
+                ORDER BY otp_id DESC LIMIT 1
+            """, (new_email, new_email_otp))
+            
+            new_otp_result = cursor.fetchone()
+            
+            if not new_otp_result:
+                return jsonify({'success': False, 'message': 'Invalid verification code for new email'}), 400
+            
+            # Mark the NEW email OTP as used
+            cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE otp_id = %s", (new_otp_result['otp_id'],))
+            
+            # 3. Send security alert to OLD email if it exists
+            if current_email:
+                send_security_alert(current_email, current_user['username'])
 
         # 4. Update the basic user info
         query = """

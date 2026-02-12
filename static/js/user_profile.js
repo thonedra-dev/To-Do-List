@@ -64,6 +64,10 @@ function cancelEdit() {
     document.getElementById('emailInput').value = originalValues.email;
     document.getElementById('genderInput').value = originalValues.gender;
     document.getElementById('positionInput').value = originalValues.position;
+    
+    // Clear hidden OTP
+    const otpHidden = document.getElementById('otpCodeHidden');
+    if(otpHidden) otpHidden.value = "";
 
     // Restore original image
     const imgElement = document.getElementById('profileImage');
@@ -110,49 +114,53 @@ function exitEditMode() {
 
 // Handle file selection and preview
 document.addEventListener('DOMContentLoaded', function() {
-    document.getElementById('profilePicInput').addEventListener('change', function(e) {
-        const file = e.target.files[0];
-        if (file) {
-            selectedFile = file;
-            
-            // Show preview
-            const reader = new FileReader();
-            reader.onload = function(event) {
-                const imgElement = document.getElementById('profileImage');
-                const placeholder = document.getElementById('initialPlaceholder');
+    const fileInput = document.getElementById('profilePicInput');
+    if(fileInput) {
+        fileInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                selectedFile = file;
                 
-                if (imgElement) {
-                    imgElement.src = event.target.result;
-                } else if (placeholder) {
-                    // Replace placeholder with image
-                    placeholder.style.display = 'none';
+                // Show preview
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    const imgElement = document.getElementById('profileImage');
+                    const placeholder = document.getElementById('initialPlaceholder');
                     
-                    const newImg = document.createElement('img');
-                    newImg.id = 'profileImage';
-                    newImg.src = event.target.result;
-                    newImg.alt = 'Profile';
-                    newImg.style.width = '100%';
-                    newImg.style.height = '100%';
-                    newImg.style.objectFit = 'cover';
+                    if (imgElement) {
+                        imgElement.src = event.target.result;
+                    } else if (placeholder) {
+                        // Replace placeholder with image
+                        placeholder.style.display = 'none';
+                        
+                        const newImg = document.createElement('img');
+                        newImg.id = 'profileImage';
+                        newImg.src = event.target.result;
+                        newImg.alt = 'Profile';
+                        newImg.style.width = '100%';
+                        newImg.style.height = '100%';
+                        newImg.style.objectFit = 'cover';
+                        
+                        const container = document.getElementById('profileImageContainer');
+                        container.insertBefore(newImg, container.firstChild);
+                    }
                     
-                    const container = document.getElementById('profileImageContainer');
-                    container.insertBefore(newImg, container.firstChild);
-                }
-                
-                // Show preview badge
-                document.getElementById('previewBadge').classList.add('active');
-            };
-            reader.readAsDataURL(file);
-        }
-    });
+                    // Show preview badge
+                    document.getElementById('previewBadge').classList.add('active');
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+    }
 });
 
-// Save profile changes
+// --- NEW SAVE PROFILE LOGIC WITH OTP ---
 async function saveProfile() {
     const username = document.getElementById('usernameInput').value.trim();
     const email = document.getElementById('emailInput').value.trim();
     const gender = document.getElementById('genderInput').value;
     const position = document.getElementById('positionInput').value.trim();
+    const otpHidden = document.getElementById('otpCodeHidden'); // Hidden input for OTP
 
     // Basic validation
     if (!username) {
@@ -165,12 +173,65 @@ async function saveProfile() {
         return;
     }
 
+    // --- SECURITY CHECK: Did the email change? ---
+    const originalEmail = originalValues.email || "";
+    
+    if (email !== originalEmail && email !== "") {
+        // 1. Alert user about verification
+        if(!confirm(`You are changing your email to ${email}. We need to verify this address. Click OK to send a code.`)) {
+            return; // Stop if user cancels
+        }
+
+        // 2. Send OTP
+        showToast('Sending Verification Code...', 'success');
+        
+        try {
+            const otpResponse = await fetch('/send_verification_otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email })
+            });
+            const otpResult = await otpResponse.json();
+
+            if (!otpResult.success) {
+                showToast(otpResult.message || "Failed to send OTP", 'error');
+                return;
+            }
+
+            // 3. Prompt for OTP
+            let userCode = prompt(`A code has been sent to ${email}.\nPlease enter the 6-digit code:`);
+            
+            if (!userCode) {
+                showToast("Verification cancelled.", 'error');
+                return;
+            }
+
+            // Store code in hidden input to send with FormData
+            if(otpHidden) otpHidden.value = userCode;
+
+        } catch (error) {
+            console.error('OTP Error:', error);
+            showToast('Error sending verification code.', 'error');
+            return;
+        }
+    } else {
+        // Clear OTP if email didn't change
+        if(otpHidden) otpHidden.value = "";
+    }
+
+    // --- PROCEED WITH UPDATE ---
+    
     // Prepare FormData
     const formData = new FormData();
     formData.append('username', username);
     formData.append('email', email);
     formData.append('gender', gender);
     formData.append('position', position);
+    
+    // Append OTP if it exists
+    if(otpHidden && otpHidden.value) {
+        formData.append('otp_code', otpHidden.value);
+    }
 
     // Add profile picture if selected
     if (selectedFile) {
@@ -209,8 +270,9 @@ async function saveProfile() {
                 }
             }
 
-            // Clear selected file and preview badge
+            // Clear selected file and preview badge and OTP
             selectedFile = null;
+            if(otpHidden) otpHidden.value = "";
             document.getElementById('previewBadge').classList.remove('active');
 
             // Exit edit mode

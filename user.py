@@ -287,48 +287,125 @@ def check_google_user():
     connection.close()
     return jsonify({'exists': False})
 
-# --- Updated Profile Route in user.py ---
+# --- Add this helper function somewhere in user.py (e.g., before update_profile) ---
+def send_security_alert(to_email, username):
+    try:
+        msg = MIMEMultipart()
+        msg['From'] = SENDER_EMAIL
+        msg['To'] = to_email
+        msg['Subject'] = "Security Alert: Email Address Changed"
+        
+        body = f"Hello {username},\n\nYour account email address was just changed. If this was you, you can ignore this message.\n\nIf you did not authorize this change, please contact support immediately."
+        msg.attach(MIMEText(body, 'plain'))
+        
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.starttls()
+        server.login(SENDER_EMAIL, SENDER_PASSWORD)
+        server.send_message(msg)
+        server.quit()
+        print(f"Security alert sent to {to_email}")
+    except Exception as e:
+        print(f"Failed to send security alert: {e}")
 
-@user_bp.route('/profile')
-def user_profile():
-    # 1. Security Check: Is the user logged in?
+# --- Updated Profile Route in user.py ---
+@user_bp.route('/update_profile', methods=['POST'])
+def update_profile():
     if 'user_id' not in session:
-        return redirect(url_for('user.login'))
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
     user_id = session['user_id']
     
+    # Get text data
+    new_username = request.form.get('username')
+    new_email = request.form.get('email')
+    new_gender = request.form.get('gender')
+    new_position = request.form.get('position')
+    
+    # Get the OTP code sent from frontend (if email changed)
+    otp_code = request.form.get('otp_code')
+    
+    # Get file data
+    file = request.files.get('profile_pic')
+    
     connection = get_db_connection()
-    # dictionary=True allows us to access data by column names
-    cursor = connection.cursor(dictionary=True)
-
+    cursor = connection.cursor(dictionary=True) # Use dictionary cursor for easier access
+    
     try:
-        # 2. Fetch everything including Gender and Position
-        # Added: gender, position
-        cursor.execute("SELECT username, email, profile_pic, gender, position FROM users WHERE id = %s", (user_id,))
-        user_data = cursor.fetchone()
+        # 1. Fetch CURRENT user data to compare
+        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        current_user = cursor.fetchone()
         
-        if not user_data:
-            return "User data not found", 404
+        if not current_user:
+            return jsonify({'success': False, 'message': 'User not found'}), 404
 
-        # 3. Handle the "Default Profile Pic" logic (The first letter)
-        # We check if profile_pic is empty or None
-        if not user_data['profile_pic']:
-            user_data['initial'] = user_data['username'][0].upper()
-        else:
-            user_data['initial'] = None
+        current_email = current_user['email']
+        
+        # 2. Security Check: If email is changing, VERIFY OTP
+        if new_email != current_email:
+            # If user is clearing the email (setting to empty), we might allow that or block it.
+            # Assuming we want to verify any *new* valid email.
+            if new_email: 
+                if not otp_code:
+                    return jsonify({'success': False, 'message': 'Email changed but verification failed (No OTP provided).'}), 400
+                
+                # Verify the OTP against the NEW email
+                # Check for the latest unverified OTP for the new_email
+                cursor.execute("""
+                    SELECT otp_id FROM otp_verifications 
+                    WHERE email_address = %s AND otp_code = %s AND verified = 0 
+                    ORDER BY otp_id DESC LIMIT 1
+                """, (new_email, otp_code))
+                
+                otp_result = cursor.fetchone()
+                
+                if not otp_result:
+                    return jsonify({'success': False, 'message': 'Invalid Verification Code.'}), 400
+                
+                # Mark OTP as used
+                cursor.execute("UPDATE otp_verifications SET verified = 1 WHERE otp_id = %s", (otp_result['otp_id'],))
+                
+                # 3. If there was an OLD email (not first time), send security alert
+                if current_email:
+                    send_security_alert(current_email, current_user['username'])
+
+        # 4. Proceed with Update
+        query = """
+            UPDATE users 
+            SET username = %s, email = %s, gender = %s, position = %s 
+            WHERE id = %s
+        """
+        cursor.execute(query, (new_username, new_email, new_gender, new_position, user_id))
+        
+        # 5. Handle Profile Pic Upload (Standard logic)
+        image_url = None
+        if file and allowed_file(file.filename):
+            filename = secure_filename(file.filename)
+            unique_filename = f"{user_id}_{int(random.random()*1000)}_{filename}"
+            filepath = os.path.join(UPLOAD_FOLDER, unique_filename)
+            
+            if not os.path.exists(UPLOAD_FOLDER):
+                os.makedirs(UPLOAD_FOLDER)
+                
+            file.save(filepath)
+            db_path = f"uploads/profile_pics/{unique_filename}"
+            
+            cursor.execute("UPDATE users SET profile_pic = %s WHERE id = %s", (db_path, user_id))
+            image_url = url_for('static', filename=db_path)
+
+        connection.commit()
+        
+        return jsonify({
+            'success': True, 
+            'message': 'Profile Updated Successfully!',
+            'new_image_url': image_url 
+        })
 
     except Exception as e:
-        print(f"Error fetching profile: {e}")
-        return "Internal Server Error", 500
+        print(f"Update Error: {e}")
+        return jsonify({'success': False, 'message': f'Database Error: {str(e)}'}), 500
     finally:
         cursor.close()
         connection.close()
-
-    # 4. Render the template and pass the 'user' dictionary
-    # Now user.gender and user.position will be available in HTML
-    return render_template('user_profile.html', user=user_data)
-
-# --- Add this inside user.py ---
 
 @user_bp.route('/update_profile', methods=['POST'])
 def update_profile():

@@ -241,8 +241,8 @@
                 <p class="setup-description">Let us know your position or job title so we can personalize your experience.</p>
                 <input type="text" id="ps-position" class="setup-input" placeholder="e.g. Software Engineer, Student, Manager...">
                 <div class="popup-buttons">
-                    <button type="button" class="btn-secondary" onclick="profileStepSkip(1)">Skip</button>
-                    <button type="button" class="btn-primary" onclick="profileStepNext(1)">Next</button>
+                    <button type="button" class="btn-secondary" onclick="profileStepSkipByField('position')">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNextByField('position')">Next</button>
                 </div>
             </div>
 
@@ -260,8 +260,8 @@
                 <p class="setup-description">Your age helps us tailor relevant tips and reminders.</p>
                 <input type="number" id="ps-age" class="setup-input" placeholder="Enter your age..." min="1" max="120">
                 <div class="popup-buttons">
-                    <button type="button" class="btn-secondary" onclick="profileStepSkip(2)">Skip</button>
-                    <button type="button" class="btn-primary" onclick="profileStepNext(2)">Next</button>
+                    <button type="button" class="btn-secondary" onclick="profileStepSkipByField('age')">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNextByField('age')">Next</button>
                 </div>
             </div>
 
@@ -282,8 +282,8 @@
                 </div>
                 <input type="hidden" id="ps-gender" value="">
                 <div class="popup-buttons">
-                    <button type="button" class="btn-secondary" onclick="profileStepSkip(3)">Skip</button>
-                    <button type="button" class="btn-primary" onclick="profileStepNext(3)">Next</button>
+                    <button type="button" class="btn-secondary" onclick="profileStepSkipByField('age')">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNextByField('age')">Next</button>
                 </div>
             </div>
 
@@ -309,8 +309,8 @@
                 </div>
                 <input type="file" id="ps-pic-input" accept="image/*" style="display:none;" onchange="previewProfilePic(this)">
                 <div class="popup-buttons">
-                    <button type="button" class="btn-secondary" onclick="profileStepSkip(4)">Skip</button>
-                    <button type="button" class="btn-primary" onclick="profileStepNext(4)">Save & Finish</button>
+                    <button type="button" class="btn-secondary" onclick="profileStepSkipByField('age')">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNextByField('age')">Next</button>
                 </div>
             </div>
 
@@ -329,7 +329,7 @@
         <div id="setup-overlay" class="setup-overlay" style="display:none;" onclick="closeAllSetupPopups()"></div>
     </div>
 
-    <div id="prompt-data" data-prompts='{{ prompts | tojson | safe }}'></div>
+    <div id="prompt-data" data-prompts='{{ prompts | tojson | safe }}' data-missing-fields='{{ missing_fields | tojson | safe }}'></div>
     <script src="{{ url_for('static', filename='js/homepage.js') }}"></script>
 </body>
 </html>

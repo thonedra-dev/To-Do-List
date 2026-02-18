@@ -752,36 +752,29 @@ body.light-mode .flag-username {
     color: var(--accent-primary); /* Light mode matching text */
 }
 
-/* --- Optimized Speech Bubble --- */
+/* --- Speech Bubble (now holds prompt action buttons) --- */
 .speech-bubble {
     position: absolute;
-    left: 115%; /* Spaced nicely from the flag */
+    left: 115%;
     top: 50%;
     transform: translateY(-50%);
     background: var(--bubble-bg);
-    backdrop-filter: blur(10px); /* Premium glass effect */
+    backdrop-filter: blur(10px);
     -webkit-backdrop-filter: blur(10px);
-    padding: 6px 14px;
-    border-radius: 12px;
+    padding: 8px 10px;
+    border-radius: 14px;
     border: 1.5px solid var(--bubble-border);
     box-shadow: 0 8px 20px var(--bubble-shadow);
-    white-space: nowrap; /* Keeps it on one line and flexible */
+    white-space: nowrap;
     z-index: 100;
     transition: all 0.3s ease;
-    /* Added the popIn and float animations you wanted */
     animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275), bubbleFloat 4s ease-in-out infinite;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
 }
 
-/* Flexible and Smaller Text */
-#bubble-text {
-    font-size: 0.78rem; /* Smaller and more professional */
-    font-weight: 600;
-    color: var(--bubble-text);
-    letter-spacing: 0.2px;
-    margin: 0;
-}
-
-/* The Triangle Tip - Themed to match border */
+/* Triangle tip */
 .speech-bubble::after {
     content: '';
     position: absolute;
@@ -793,7 +786,42 @@ body.light-mode .flag-username {
     border-right: 8px solid var(--bubble-border);
 }
 
-/* Keyframes for the "Attractive" feel */
+/* Prompt action buttons inside the bubble */
+.prompt-action-btn {
+    display: block;
+    width: 100%;
+    padding: 5px 12px;
+    background: rgba(255, 255, 255, 0.12);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 8px;
+    color: var(--bubble-text);
+    font-size: 0.75rem;
+    font-weight: 600;
+    font-family: inherit;
+    letter-spacing: 0.2px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.prompt-action-btn:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateX(3px);
+    border-color: rgba(255, 255, 255, 0.5);
+}
+
+body.light-mode .prompt-action-btn {
+    background: rgba(66, 133, 244, 0.1);
+    border-color: rgba(66, 133, 244, 0.3);
+    color: var(--accent-primary);
+}
+
+body.light-mode .prompt-action-btn:hover {
+    background: rgba(66, 133, 244, 0.18);
+}
+
+/* Keyframes */
 @keyframes popIn {
     0% { opacity: 0; transform: translateY(-50%) scale(0.6); }
     100% { opacity: 1; transform: translateY(-50%) scale(1); }
@@ -801,5 +829,338 @@ body.light-mode .flag-username {
 
 @keyframes bubbleFloat {
     0%, 100% { margin-left: 0; }
-    50% { margin-left: 8px; } /* Slides gently back and forth */
+    50% { margin-left: 8px; }
+}
+
+@keyframes fadeOut {
+    to { opacity: 0; transform: scale(0.85); }
+}
+
+/* ================================================================
+   SETUP POPUPS — Email Verify & Profile Setup
+   Shared overlay backdrop
+   ================================================================ */
+.setup-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.55);
+    backdrop-filter: blur(4px);
+    z-index: 1999;
+}
+
+/* The popup container */
+.setup-popup {
+    display: none;
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(22, 22, 28, 0.98);
+    backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.55);
+    z-index: 2100;
+    min-width: 460px;
+    max-width: 520px;
+    width: 90%;
+    animation: popupIn 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+body.light-mode .setup-popup {
+    background: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(0, 0, 0, 0.07);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+/* Inner section (each step lives in one of these) */
+.setup-popup-inner {
+    animation: popupIn 0.25s ease;
+}
+
+/* Step progress bar */
+.setup-step-bar {
+    width: 100%;
+    height: 4px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+    margin-bottom: 6px;
+    overflow: hidden;
+}
+
+body.light-mode .setup-step-bar {
+    background: rgba(0, 0, 0, 0.07);
+}
+
+.setup-step-bar-inner {
+    height: 100%;
+    background: linear-gradient(90deg, #4285f4, #5a9bff);
+    border-radius: 4px;
+    transition: width 0.4s ease;
+    width: 0%;
+}
+
+.setup-step-label {
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: rgba(255, 255, 255, 0.45);
+    margin-bottom: 22px;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+body.light-mode .setup-step-label {
+    color: rgba(0, 0, 0, 0.35);
+}
+
+/* Description text below popup header */
+.setup-description {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.65);
+    margin-bottom: 22px;
+    line-height: 1.6;
+}
+
+body.light-mode .setup-description {
+    color: #6b7280;
+}
+
+/* Generic input used across setup popups */
+.setup-input {
+    width: 100%;
+    padding: 14px 18px;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.05);
+    color: #ffffff;
+    font-size: 15px;
+    outline: none;
+    margin-bottom: 16px;
+    transition: all 0.3s ease;
+    font-family: inherit;
+}
+
+body.light-mode .setup-input {
+    background: rgba(0, 0, 0, 0.03);
+    color: #1f2937;
+    border-color: rgba(0, 0, 0, 0.08);
+}
+
+.setup-input:focus {
+    border-color: #4285f4;
+    box-shadow: 0 0 0 3px rgba(66, 133, 244, 0.15);
+}
+
+/* Error message */
+.setup-error {
+    background: rgba(239, 68, 68, 0.1);
+    border: 1px solid rgba(239, 68, 68, 0.3);
+    border-radius: 8px;
+    color: #ef4444;
+    font-size: 13px;
+    padding: 10px 14px;
+    margin-bottom: 14px;
+}
+
+/* Success state */
+.setup-success-icon {
+    font-size: 52px;
+    text-align: center;
+    margin-bottom: 14px;
+}
+
+.setup-success-title {
+    text-align: center;
+    font-size: 22px;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 10px;
+}
+
+body.light-mode .setup-success-title {
+    color: #111827;
+}
+
+/* ---- Google Sign-In Button ---- */
+.google-btn {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 13px 20px;
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    background: rgba(255, 255, 255, 0.07);
+    color: #ffffff;
+    font-size: 15px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 18px;
+}
+
+.google-btn:hover {
+    background: rgba(255, 255, 255, 0.13);
+    border-color: rgba(255, 255, 255, 0.3);
+    transform: translateY(-1px);
+}
+
+body.light-mode .google-btn {
+    background: #ffffff;
+    border: 1px solid #dadce0;
+    color: #3c4043;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.1);
+}
+
+body.light-mode .google-btn:hover {
+    background: #f8f9fa;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+}
+
+/* Email picked preview */
+.email-picked-preview {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    background: rgba(66, 133, 244, 0.1);
+    border: 1px solid rgba(66, 133, 244, 0.25);
+    border-radius: 12px;
+    margin-bottom: 18px;
+}
+
+.picked-info {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.picked-info span:first-child {
+    font-size: 14px;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.picked-info span:last-child {
+    font-size: 12px;
+    color: rgba(255, 255, 255, 0.55);
+}
+
+body.light-mode .picked-info span:first-child { color: #111827; }
+body.light-mode .picked-info span:last-child  { color: #6b7280; }
+
+.btn-change-account {
+    padding: 5px 12px;
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 7px;
+    background: rgba(255,255,255,0.08);
+    color: rgba(255,255,255,0.7);
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.btn-change-account:hover {
+    background: rgba(255,255,255,0.15);
+}
+
+body.light-mode .btn-change-account {
+    border-color: rgba(0,0,0,0.12);
+    background: rgba(0,0,0,0.04);
+    color: #6b7280;
+}
+
+/* ---- Gender selection buttons ---- */
+.gender-options {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.gender-btn {
+    flex: 1;
+    padding: 12px 8px;
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.05);
+    color: rgba(255,255,255,0.8);
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.gender-btn:hover,
+.gender-btn.selected {
+    background: rgba(66, 133, 244, 0.2);
+    border-color: #4285f4;
+    color: #ffffff;
+}
+
+body.light-mode .gender-btn {
+    background: rgba(0,0,0,0.03);
+    color: #374151;
+    border-color: rgba(0,0,0,0.08);
+}
+
+body.light-mode .gender-btn:hover,
+body.light-mode .gender-btn.selected {
+    background: rgba(66, 133, 244, 0.1);
+    border-color: #4285f4;
+    color: #4285f4;
+}
+
+/* ---- Profile picture upload area ---- */
+.pic-upload-area {
+    border: 2px dashed rgba(255,255,255,0.2);
+    border-radius: 14px;
+    padding: 30px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s;
+    margin-bottom: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+}
+
+.pic-upload-area:hover {
+    border-color: #4285f4;
+    background: rgba(66, 133, 244, 0.05);
+}
+
+#pic-placeholder-icon {
+    color: rgba(255,255,255,0.3);
+}
+
+body.light-mode #pic-placeholder-icon {
+    color: rgba(0,0,0,0.2);
+}
+
+.pic-upload-hint {
+    font-size: 13px;
+    color: rgba(255,255,255,0.4);
+    margin: 0;
+}
+
+body.light-mode .pic-upload-hint {
+    color: #9ca3af;
+}
+
+/* Responsive for setup popups */
+@media (max-width: 520px) {
+    .setup-popup {
+        min-width: 90%;
+        padding: 28px 20px;
+    }
+    .gender-options {
+        flex-direction: column;
+    }
 }

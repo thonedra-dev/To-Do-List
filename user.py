@@ -378,6 +378,41 @@ def verify_old_email_google():
 # ==============================================================================
 # UPDATED ROUTE: Modified update_profile with two-step email verification
 # ==============================================================================
+@user_bp.route('/homepage_save_email', methods=['POST'])
+def homepage_save_email():
+    """
+    Called after OTP is verified on the homepage.
+    Saves the verified email address to the logged-in user's record.
+    """
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json()
+    email = data.get('email')
+
+    if not email:
+        return jsonify({'success': False, 'message': 'Email is required'})
+
+    user_id = session['user_id']
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Make sure this email is not already used by another account
+        cursor.execute("SELECT id FROM users WHERE email = %s AND id != %s", (email, user_id))
+        if cursor.fetchone():
+            return jsonify({'success': False, 'message': 'This email is already linked to another account.'})
+
+        cursor.execute("UPDATE users SET email = %s WHERE id = %s", (email, user_id))
+        connection.commit()
+        return jsonify({'success': True})
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)})
+    finally:
+        cursor.close()
+        connection.close()
+
+
 @user_bp.route('/update_profile', methods=['POST'])
 def update_profile():
     if 'user_id' not in session:

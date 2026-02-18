@@ -27,7 +27,14 @@
 
             {% if prompts %}
             <div id="speech-bubble" class="speech-bubble">
-                <p id="bubble-text" style="margin: 0;"></p>
+                <div id="prompt-buttons-container">
+                    {% for prompt in prompts %}
+                        <button 
+                            class="prompt-action-btn"
+                            onclick="event.preventDefault(); event.stopPropagation(); handlePromptClick('{{ prompt }}')"
+                        >{{ prompt }}</button>
+                    {% endfor %}
+                </div>
             </div>
             {% endif %}
         </div>
@@ -89,6 +96,9 @@
             </div>
         </div>
 
+        <!-- =====================================================
+             EXISTING TASK POPUPS (unchanged)
+        ====================================================== -->
         <div id="taskInputPopup">
             <div class="popup-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -150,11 +160,176 @@
                 <button type="button" class="btn-primary" onclick="closeStepSetupPopup()">Finish Task Setup</button>
             </div>
         </div>
+
+        <!-- =====================================================
+             NEW: EMAIL VERIFICATION POPUP
+             Step 1: Google Sign-In picker
+             Step 2: OTP confirmation
+        ====================================================== --> 
+         
+        <div id="emailVerifyPopup" class="setup-popup">
+
+    <!-- Step 1: Enter email address -->
+    <div class="setup-popup-inner" id="emailStep1">
+        <div class="popup-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+                <polyline points="22,6 12,13 2,6"></polyline>
+            </svg>
+            <h3>Verify Your Email ⚡</h3>
+        </div>
+        <p class="setup-description">Enter your email address. We'll send a 6-digit code to confirm you own it.</p>
+        <input type="email" id="email-input" class="setup-input" placeholder="Enter your email address...">
+        <div id="email-step1-error" class="setup-error" style="display:none;"></div>
+        <div class="popup-buttons">
+            <button type="button" class="btn-secondary" onclick="closeEmailVerifyPopup()">Cancel</button>
+            <button type="button" class="btn-primary" onclick="sendEmailOtp()">Send Code</button>
+        </div>
     </div>
 
-<div id="prompt-data" data-prompts='{{ prompts | tojson | safe }}'></div>
+    <!-- Step 2: Enter OTP -->
+    <div class="setup-popup-inner" id="emailStep2" style="display:none;">
+        <div class="popup-header">
+            <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect>
+                <path d="M7 11V7a5 5 0 0 1 10 0v4"></path>
+            </svg>
+            <h3>Enter OTP Code</h3>
+        </div>
+        <p class="setup-description">A 6-digit code was sent to <strong id="otp-target-email"></strong>. Check your inbox.</p>
+        <input type="text" id="otp-input" class="setup-input" placeholder="Enter 6-digit code..." maxlength="6" inputmode="numeric">
+        <div id="email-step2-error" class="setup-error" style="display:none;"></div>
+        <div class="popup-buttons">
+            <button type="button" class="btn-secondary" onclick="showEmailStep1()">Back</button>
+            <button type="button" class="btn-primary" onclick="verifyEmailOtp()">Verify & Save</button>
+        </div>
+    </div>
 
-<script src="{{ url_for('static', filename='js/homepage.js') }}"></script>
+    <!-- Done -->
+    <div class="setup-popup-inner" id="emailStepDone" style="display:none;">
+        <div class="setup-success-icon">✅</div>
+        <h3 class="setup-success-title">Email Verified!</h3>
+        <p class="setup-description">Your email has been linked to your account successfully.</p>
+        <div class="popup-buttons">
+            <button type="button" class="btn-primary" onclick="closeEmailVerifyPopup()">Done</button>
+        </div>
+    </div>
+</div>
 
+        <!-- =====================================================
+             NEW: PROFILE SETUP POPUP
+             4 steps: Position → Age → Gender → Profile Pic
+             Each has a Skip button
+        ====================================================== -->
+        <div id="profileSetupPopup" class="setup-popup">
+
+            <!-- Step indicator -->
+            <div class="setup-step-bar">
+                <div class="setup-step-bar-inner" id="profileStepBar"></div>
+            </div>
+            <div class="setup-step-label" id="profileStepLabel"></div>
+
+            <!-- Step 1: Position -->
+            <div class="setup-popup-inner" id="profileStep1">
+                <div class="popup-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="2" y="7" width="20" height="14" rx="2" ry="2"></rect>
+                        <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"></path>
+                    </svg>
+                    <h3>What's your role? 💼</h3>
+                </div>
+                <p class="setup-description">Let us know your position or job title so we can personalize your experience.</p>
+                <input type="text" id="ps-position" class="setup-input" placeholder="e.g. Software Engineer, Student, Manager...">
+                <div class="popup-buttons">
+                    <button type="button" class="btn-secondary" onclick="profileStepSkip(1)">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNext(1)">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 2: Age -->
+            <div class="setup-popup-inner" id="profileStep2" style="display:none;">
+                <div class="popup-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
+                        <line x1="16" y1="2" x2="16" y2="6"></line>
+                        <line x1="8" y1="2" x2="8" y2="6"></line>
+                        <line x1="3" y1="10" x2="21" y2="10"></line>
+                    </svg>
+                    <h3>How old are you? 🎂</h3>
+                </div>
+                <p class="setup-description">Your age helps us tailor relevant tips and reminders.</p>
+                <input type="number" id="ps-age" class="setup-input" placeholder="Enter your age..." min="1" max="120">
+                <div class="popup-buttons">
+                    <button type="button" class="btn-secondary" onclick="profileStepSkip(2)">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNext(2)">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 3: Gender -->
+            <div class="setup-popup-inner" id="profileStep3" style="display:none;">
+                <div class="popup-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="8" r="4"></circle>
+                        <path d="M4 20c0-4 4-7 8-7s8 3 8 7"></path>
+                    </svg>
+                    <h3>Your Gender 🧬</h3>
+                </div>
+                <p class="setup-description">Optional — only used for personalizing greetings.</p>
+                <div class="gender-options">
+                    <button type="button" class="gender-btn" data-value="Male" onclick="selectGender(this)">👨 Male</button>
+                    <button type="button" class="gender-btn" data-value="Female" onclick="selectGender(this)">👩 Female</button>
+                    <button type="button" class="gender-btn" data-value="Other" onclick="selectGender(this)">🌈 Other</button>
+                </div>
+                <input type="hidden" id="ps-gender" value="">
+                <div class="popup-buttons">
+                    <button type="button" class="btn-secondary" onclick="profileStepSkip(3)">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNext(3)">Next</button>
+                </div>
+            </div>
+
+            <!-- Step 4: Profile Picture -->
+            <div class="setup-popup-inner" id="profileStep4" style="display:none;">
+                <div class="popup-header">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                        <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                    <h3>Profile Picture 📸</h3>
+                </div>
+                <p class="setup-description">Upload a photo to personalize your profile.</p>
+                <div class="pic-upload-area" onclick="document.getElementById('ps-pic-input').click()">
+                    <div id="pic-preview-wrap">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" id="pic-placeholder-icon">
+                            <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                            <polyline points="21 15 16 10 5 21"/>
+                        </svg>
+                        <img id="pic-preview-img" src="" alt="" style="display:none; width:100px; height:100px; border-radius:50%; object-fit:cover;">
+                    </div>
+                    <p class="pic-upload-hint">Click to choose an image</p>
+                </div>
+                <input type="file" id="ps-pic-input" accept="image/*" style="display:none;" onchange="previewProfilePic(this)">
+                <div class="popup-buttons">
+                    <button type="button" class="btn-secondary" onclick="profileStepSkip(4)">Skip</button>
+                    <button type="button" class="btn-primary" onclick="profileStepNext(4)">Save & Finish</button>
+                </div>
+            </div>
+
+            <!-- Done state -->
+            <div class="setup-popup-inner" id="profileStepDone" style="display:none;">
+                <div class="setup-success-icon">🎉</div>
+                <h3 class="setup-success-title">Profile Setup Complete!</h3>
+                <p class="setup-description">Your profile has been updated. You're all set!</p>
+                <div class="popup-buttons">
+                    <button type="button" class="btn-primary" onclick="closeProfileSetupPopup()">Let's Go 🚀</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Overlay backdrop -->
+        <div id="setup-overlay" class="setup-overlay" style="display:none;" onclick="closeAllSetupPopups()"></div>
+    </div>
+
+    <div id="prompt-data" data-prompts='{{ prompts | tojson | safe }}'></div>
+    <script src="{{ url_for('static', filename='js/homepage.js') }}"></script>
 </body>
 </html>

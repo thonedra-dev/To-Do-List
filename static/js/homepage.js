@@ -215,11 +215,26 @@ async function verifyEmailOtp() {
 // =====================================================================
 // SECTION 5: PROFILE SETUP POPUP
 // =====================================================================
+// Read which fields are missing from the data attribute
+const MISSING_FIELDS = JSON.parse(
+    document.getElementById('prompt-data').getAttribute('data-missing-fields') || '[]'
+);
+
+// All 4 possible steps mapped to their field name and HTML step ID
+const ALL_STEPS = [
+    { field: 'position', id: 'profileStep1' },
+    { field: 'age',      id: 'profileStep2' },
+    { field: 'gender',   id: 'profileStep3' },
+    { field: 'pic',      id: 'profileStep4' },
+];
+
+// Only keep steps where the field is actually missing
+const ACTIVE_STEPS = ALL_STEPS.filter(s => MISSING_FIELDS.includes(s.field));
+
 const profileData = { position: null, age: null, gender: null, pic: null };
-const PROFILE_STEPS_TOTAL = 4;
 
 function openProfileSetupPopup() {
-    // Reset all step data
+    // Reset data
     profileData.position = null;
     profileData.age      = null;
     profileData.gender   = null;
@@ -232,7 +247,13 @@ function openProfileSetupPopup() {
     document.getElementById('pic-placeholder-icon').style.display = 'block';
     document.querySelectorAll('.gender-btn').forEach(b => b.classList.remove('selected'));
 
-    showProfileStep(1);
+    // Hide ALL step divs first, then show only active ones via showProfileStep
+    ALL_STEPS.forEach(s => {
+        document.getElementById(s.id).style.display = 'none';
+    });
+    document.getElementById('profileStepDone').style.display = 'none';
+
+    showProfileStep(0); // index into ACTIVE_STEPS
     document.getElementById('profileSetupPopup').style.display = 'block';
     showOverlay();
 }
@@ -242,63 +263,76 @@ function closeProfileSetupPopup() {
     hideOverlay();
 }
 
-function showProfileStep(stepNum) {
-    for (let i = 1; i <= PROFILE_STEPS_TOTAL; i++) {
-        const el = document.getElementById(`profileStep${i}`);
-        if (el) el.style.display = (i === stepNum) ? 'block' : 'none';
-    }
+// activeIndex = index in ACTIVE_STEPS array (0-based)
+function showProfileStep(activeIndex) {
+    // Hide all step divs
+    ALL_STEPS.forEach(s => {
+        document.getElementById(s.id).style.display = 'none';
+    });
     document.getElementById('profileStepDone').style.display = 'none';
 
-    // Update step bar
-    const pct = ((stepNum - 1) / PROFILE_STEPS_TOTAL) * 100;
+    // Show the current active step's div
+    const current = ACTIVE_STEPS[activeIndex];
+    if (current) {
+        document.getElementById(current.id).style.display = 'block';
+    }
+
+    // Progress bar based on active steps only
+    const pct = (activeIndex / ACTIVE_STEPS.length) * 100;
     document.getElementById('profileStepBar').style.width = pct + '%';
-    document.getElementById('profileStepLabel').textContent = `Step ${stepNum} of ${PROFILE_STEPS_TOTAL}`;
+    document.getElementById('profileStepLabel').textContent =
+        `Step ${activeIndex + 1} of ${ACTIVE_STEPS.length}`;
 }
 
 function showProfileDone() {
-    for (let i = 1; i <= PROFILE_STEPS_TOTAL; i++) {
-        const el = document.getElementById(`profileStep${i}`);
-        if (el) el.style.display = 'none';
-    }
+    ALL_STEPS.forEach(s => {
+        document.getElementById(s.id).style.display = 'none';
+    });
     document.getElementById('profileStepDone').style.display = 'block';
     document.getElementById('profileStepBar').style.width = '100%';
     document.getElementById('profileStepLabel').textContent = 'Complete!';
-    // Remove the "Setup Profile" button from the bubble
     removePromptButton('Setup Profile');
 }
 
-function profileStepSkip(step) {
-    // Clear that step's data and move on
-    if (step === 1) profileData.position = null;
-    if (step === 2) profileData.age      = null;
-    if (step === 3) profileData.gender   = null;
-    if (step === 4) profileData.pic      = null;
+// activeIndex = current index in ACTIVE_STEPS
+function profileStepSkip(activeIndex) {
+    const current = ACTIVE_STEPS[activeIndex];
+    if (current) profileData[current.field] = null; // clear that field
 
-    if (step < PROFILE_STEPS_TOTAL) {
-        showProfileStep(step + 1);
+    const next = activeIndex + 1;
+    if (next < ACTIVE_STEPS.length) {
+        showProfileStep(next);
     } else {
         submitProfileSetup();
     }
 }
 
-function profileStepNext(step) {
-    if (step === 1) {
-        const val = document.getElementById('ps-position').value.trim();
-        profileData.position = val || null;
-        showProfileStep(2);
-    } else if (step === 2) {
-        const val = parseInt(document.getElementById('ps-age').value);
-        if (document.getElementById('ps-age').value.trim() && (isNaN(val) || val < 1 || val > 120)) {
+function profileStepNext(activeIndex) {
+    const current = ACTIVE_STEPS[activeIndex];
+
+    if (current.field === 'position') {
+        profileData.position = document.getElementById('ps-position').value.trim() || null;
+
+    } else if (current.field === 'age') {
+        const raw = document.getElementById('ps-age').value.trim();
+        const val = parseInt(raw);
+        if (raw && (isNaN(val) || val < 1 || val > 120)) {
             alert('Please enter a valid age between 1 and 120.');
             return;
         }
-        profileData.age = val || null;
-        showProfileStep(3);
-    } else if (step === 3) {
+        profileData.age = raw ? val : null;
+
+    } else if (current.field === 'gender') {
         profileData.gender = document.getElementById('ps-gender').value || null;
-        showProfileStep(4);
-    } else if (step === 4) {
-        // pic is already stored in profileData.pic via previewProfilePic
+
+    } else if (current.field === 'pic') {
+        // pic is already stored via previewProfilePic()
+    }
+
+    const next = activeIndex + 1;
+    if (next < ACTIVE_STEPS.length) {
+        showProfileStep(next);
+    } else {
         submitProfileSetup();
     }
 }
@@ -378,4 +412,14 @@ function showError(id, msg) {
 function hideError(id) {
     const el = document.getElementById(id);
     if (el) el.style.display = 'none';
+}
+
+function profileStepSkipByField(field) {
+    const idx = ACTIVE_STEPS.findIndex(s => s.field === field);
+    if (idx !== -1) profileStepSkip(idx);
+}
+
+function profileStepNextByField(field) {
+    const idx = ACTIVE_STEPS.findIndex(s => s.field === field);
+    if (idx !== -1) profileStepNext(idx);
 }

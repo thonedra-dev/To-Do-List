@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, session
+from flask import Flask, render_template, request, redirect, session, jsonify
 import mysql.connector
 from user import user_bp  # Import user authentication Blueprint
 from datetime import datetime
@@ -48,8 +48,6 @@ def index():
         if None in (user[3], user[4], user[5]):
             prompts.append("Setup Profile 🛠️")
             
-        if not prompts:
-            prompts.append(f"Ready to work, {user[1]}? 🚀")
     else:
         username = "Unknown"
         profile_pic = None
@@ -274,6 +272,77 @@ def feedback(task_id):
                            completed_at=completed_at, 
                            time_difference=round(time_difference, 2))
 
+
+
+@app.route('/save_profile_setup', methods=['POST'])
+def save_profile_setup():
+    """
+    Homepage profile-setup popup: saves position, age, gender, and/or profile_pic.
+    All fields are optional — only updates non-null values.
+    """
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id   = session['user_id']
+    position  = request.form.get('position')   or None
+    age_raw   = request.form.get('age')        or None
+    gender    = request.form.get('gender')     or None
+    pic_file  = request.files.get('profile_pic')
+
+    age = None
+    if age_raw:
+        try:
+            age = int(age_raw)
+        except ValueError:
+            return jsonify({'success': False, 'message': 'Invalid age value'}), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+
+    try:
+        # Build dynamic SET clause — only update what was provided
+        updates = []
+        params  = []
+
+        if position is not None:
+            updates.append("position = %s")
+            params.append(position)
+        if age is not None:
+            updates.append("age = %s")
+            params.append(age)
+        if gender is not None:
+            updates.append("gender = %s")
+            params.append(gender)
+
+        # Handle profile picture upload (re-using user.py's UPLOAD_FOLDER convention)
+        if pic_file and pic_file.filename:
+            allowed = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
+            ext = pic_file.filename.rsplit('.', 1)[-1].lower() if '.' in pic_file.filename else ''
+            if ext in allowed:
+                import os
+                from werkzeug.utils import secure_filename
+                upload_folder = 'static/uploads/profile_pics'
+                os.makedirs(upload_folder, exist_ok=True)
+                filename = secure_filename(pic_file.filename)
+                unique_name = f"{user_id}_setup_{filename}"
+                pic_file.save(os.path.join(upload_folder, unique_name))
+                db_path = f"uploads/profile_pics/{unique_name}"
+                updates.append("profile_pic = %s")
+                params.append(db_path)
+
+        if updates:
+            sql = f"UPDATE users SET {', '.join(updates)} WHERE id = %s"
+            params.append(user_id)
+            cursor.execute(sql, tuple(params))
+            connection.commit()
+
+        return jsonify({'success': True})
+
+    except Exception as e:
+        return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
 
 
 if __name__ == "__main__":

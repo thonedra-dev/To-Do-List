@@ -47,7 +47,13 @@ def index():
         # Check if age (4), gender (5), or position (3) is missing
         if None in (user[3], user[4], user[5]):
             prompts.append("Setup Profile 🛠️")
-            
+        
+        missing_fields = []
+        if user[3] is None: missing_fields.append('position')
+        if user[4] is None: missing_fields.append('age')
+        if user[5] is None: missing_fields.append('gender')
+        if user[7] is None: missing_fields.append('pic')
+
     else:
         username = "Unknown"
         profile_pic = None
@@ -55,7 +61,7 @@ def index():
     cursor.close()
     connection.close()
 
-    return render_template('homepage.html', username=username, profile_pic=profile_pic, prompts=prompts)
+    return render_template('homepage.html', username=username, profile_pic=profile_pic, prompts=prompts, missing_fields=missing_fields)
 
 @app.route('/task_details')
 def task_details():

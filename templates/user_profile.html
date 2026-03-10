@@ -8,14 +8,17 @@
     <link rel="stylesheet" href="{{ url_for('static', filename='css/user_profile.css') }}">
      <script src="https://accounts.google.com/gsi/client" async defer></script>
     
+
+</head>
+<body>
+
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'light') document.body.classList.add('light-mode');
         })();
     </script>
-</head>
-<body>
+
     <div class="theme-toggle" onclick="toggleTheme()">
         <span>Theme</span>
     </div>

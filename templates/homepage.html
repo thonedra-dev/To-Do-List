@@ -4,16 +4,19 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Task Manager</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+</head>
+
+<body>
+
     <script>
         (function () {
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'light') document.body.classList.add('light-mode');
         })();
     </script>
-    <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
-</head>
 
-<a href="/profile" style="text-decoration: none;">
+    <a href="/profile" style="text-decoration: none;">
     <div class="user-flag">
         <div class="flag-content" style="position: relative;"> 
             <div class="profile-circle">
@@ -41,7 +44,6 @@
     </div>
 </a>
 
-<body>
     <div class="theme-toggle" onclick="toggleTheme()">
         <span>Theme</span>
     </div>

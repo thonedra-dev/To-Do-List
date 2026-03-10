@@ -2,6 +2,9 @@ from flask import Flask, render_template, request, redirect, session, jsonify
 import mysql.connector
 from user import user_bp  # Import user authentication Blueprint
 from datetime import datetime
+import json   # add at the top of backend.py if not already present
+import os
+from werkzeug.utils import secure_filename
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"  # Required for session management
@@ -18,6 +21,7 @@ def get_db_connection():
     )
 
 # Route: Home Page - Fetch Tasks & Completed Tasks
+ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
 
 
 @app.route('/')
@@ -350,6 +354,411 @@ def save_profile_setup():
         cursor.close()
         connection.close()
 
+
+def save_upload(file, subfolder, prefix):
+    """Helper: saves an uploaded file, returns the db-ready relative path or None."""
+    if not file or not file.filename:
+        return None
+    ext = file.filename.rsplit('.', 1)[-1].lower() if '.' in file.filename else ''
+    if ext not in ALLOWED_EXTENSIONS:
+        return None
+    folder = os.path.join('static', 'uploads', subfolder)
+    os.makedirs(folder, exist_ok=True)
+    filename    = secure_filename(file.filename)
+    unique_name = f"{prefix}_{filename}"
+    file.save(os.path.join(folder, unique_name))
+    return f"uploads/{subfolder}/{unique_name}"
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ROUTE 1 — Search user by email
+# GET /search_user_by_email?email=someone@example.com
+# Used by the project-setup form so the leader can look up potential members.
+# Returns a small JSON card: id, username, email, profile_pic, position.
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route('/search_user_by_email')
+def search_user_by_email():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    email = request.args.get('email', '').strip()
+    if not email:
+        return jsonify({'success': False, 'message': 'Email is required'}), 400
+
+    connection = get_db_connection()
+    cursor     = connection.cursor()
+    cursor.execute(
+        "SELECT id, username, email, profile_pic, position FROM users WHERE email = %s",
+        (email,)
+    )
+    user = cursor.fetchone()
+    cursor.close()
+    connection.close()
+
+    if not user:
+        return jsonify({'success': False, 'message': 'User not found'}), 404
+
+    return jsonify({
+        'success': True,
+        'user': {
+            'id':          user[0],
+            'username':    user[1],
+            'email':       user[2],
+            'profile_pic': user[3],
+            'position':    user[4]
+        }
+    })
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ROUTE 2 — Create project  (the big one)
+# POST /project_setup   multipart/form-data
+#
+# Form fields expected:
+#   project_name        (str)
+#   description         (str)
+#   project_cover_pic   (file, optional)
+#   sections_data       (JSON string — see shape below)
+#   section_pic_0 …     (file, optional, one per section index)
+#
+# sections_data shape:
+# [
+#   {
+#     "section_description": "Design the UI",
+#     "assignees": [
+#       { "user_id": 3, "duty_description": "Wireframes", "role": "Designer" }
+#     ]
+#   }
+# ]
+#
+# What this route does (in order):
+#   1. Fetch leader info for notification message
+#   2. Save cover pic → INSERT projects → get project_id
+#   3. For each section:
+#        Save section pic → INSERT project_sections → get section_id
+#        For each assignee:
+#          INSERT section_assignees (acceptance_status = 0)
+#          INSERT notifications     (formatted invitation message)
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route('/project_setup', methods=['POST'])
+def project_setup():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    leader_id = session['user_id']
+
+    # ── Collect form fields ──────────────────────────────────────────────────
+    project_name = request.form.get('project_name', '').strip() or None
+    description  = request.form.get('description',  '').strip() or None
+    cover_file   = request.files.get('project_cover_pic')
+
+    sections_raw = request.form.get('sections_data', '').strip()
+    if not sections_raw:
+        return jsonify({'success': False, 'message': 'sections_data is required'}), 400
+
+    try:
+        sections = json.loads(sections_raw)
+    except json.JSONDecodeError:
+        return jsonify({'success': False, 'message': 'Invalid sections_data JSON'}), 400
+
+    if not isinstance(sections, list) or len(sections) == 0:
+        return jsonify({'success': False, 'message': 'At least one section is required'}), 400
+
+    # Every section must have at least one assignee
+    for i, sec in enumerate(sections):
+        if not sec.get('assignees'):
+            return jsonify({
+                'success': False,
+                'message': f'Section {i + 1} must have at least one assignee.'
+            }), 400
+
+    connection = get_db_connection()
+    cursor     = connection.cursor()
+
+    try:
+        # ── Step 1: Fetch leader info (used in notification messages) ────────
+        cursor.execute(
+            "SELECT username, email, position FROM users WHERE id = %s",
+            (leader_id,)
+        )
+        leader = cursor.fetchone()
+        leader_name     = leader[0] if leader else "Unknown"
+        leader_email    = leader[1] if leader else "—"
+        leader_position = leader[2] if leader else "—"
+
+        # ── Step 2: Save cover pic & insert project ──────────────────────────
+        cover_path = save_upload(cover_file, 'project_covers', f"{leader_id}_cover")
+
+        cursor.execute(
+            """
+            INSERT INTO projects (leader_id, project_name, description, project_cover_pic, status)
+            VALUES (%s, %s, %s, %s, 'Pending')
+            """,
+            (leader_id, project_name, description, cover_path)
+        )
+        connection.commit()
+        project_id = cursor.lastrowid
+
+        cover_display = (
+            f"\n  📸 Cover     : /{cover_path}" if cover_path else ""
+        )
+
+        # ── Step 3: Sections loop ────────────────────────────────────────────
+        for idx, sec in enumerate(sections):
+            section_description = sec.get('section_description', '').strip() or None
+            assignees           = sec.get('assignees', [])
+
+            sec_pic_path = save_upload(
+                request.files.get(f'section_pic_{idx}'),
+                'section_pics',
+                f"{project_id}_sec{idx}"
+            )
+
+            cursor.execute(
+                """
+                INSERT INTO project_sections (project_id, section_description, section_picture, status)
+                VALUES (%s, %s, %s, 'Pending')
+                """,
+                (project_id, section_description, sec_pic_path)
+            )
+            connection.commit()
+            section_id = cursor.lastrowid
+
+            # ── Step 4: Assignees + notifications ────────────────────────────
+            for member in assignees:
+                member_user_id   = member.get('user_id')
+                duty_description = member.get('duty_description', '').strip() or None
+                role             = member.get('role', '').strip() or None
+
+                if not member_user_id:
+                    continue
+
+                # Insert pending assignee row
+                cursor.execute(
+                    """
+                    INSERT INTO section_assignees
+                        (section_id, user_id, duty_description, role, acceptance_status)
+                    VALUES (%s, %s, %s, %s, 0)
+                    """,
+                    (section_id, member_user_id, duty_description, role)
+                )
+
+                # Build formatted notification message
+                notification_message = (
+                    f"🚀 Project Invitation\n"
+                    f"{'─' * 38}\n"
+                    f"  📌 Project   : {project_name or 'Untitled'}\n"
+                    f"  📝 About     : {description or 'No description provided.'}"
+                    f"{cover_display}\n"
+                    f"{'─' * 38}\n"
+                    f"  📂 Your Section  : {section_description or 'Not specified'}\n"
+                    f"  🎯 Your Role     : {role or 'Not specified'}\n"
+                    f"  📋 Your Duties   : {duty_description or 'Not specified'}\n"
+                    f"{'─' * 38}\n"
+                    f"  👤 Invited by : {leader_name}\n"
+                    f"  📧 Email      : {leader_email}\n"
+                    f"  💼 Position   : {leader_position or 'Not specified'}\n"
+                    f"{'─' * 38}\n"
+                    f"Please respond using [ Accept ] or [ Deny ] below."
+                )
+
+                cursor.execute(
+                    "INSERT INTO notifications (user_id, message) VALUES (%s, %s)",
+                    (member_user_id, notification_message)
+                )
+
+            connection.commit()
+
+        return jsonify({'success': True, 'project_id': project_id})
+
+    except Exception as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+@app.route('/project_setup')
+def project_setup_page():
+    if 'user_id' not in session:
+        return redirect('/login')
+    return render_template('project_setup.html')
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ROUTE 3 — Fetch notifications for the logged-in user
+# GET /notifications
+# Returns all notifications newest-first.
+# Each item carries the noti_id which the frontend passes to /respond_invitation.
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route('/notifications')
+def get_notifications():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id    = session['user_id']
+    connection = get_db_connection()
+    cursor     = connection.cursor()
+
+    cursor.execute(
+        """
+        SELECT n.noti_id, n.message, n.created_at,
+               sa.section_id, sa.acceptance_status
+        FROM notifications n
+        LEFT JOIN section_assignees sa
+               ON sa.user_id = n.user_id
+        WHERE n.user_id = %s
+        ORDER BY n.created_at DESC
+        """,
+        (user_id,)
+    )
+    rows = cursor.fetchall()
+    cursor.close()
+    connection.close()
+
+    notifications = [
+        {
+            'noti_id':           row[0],
+            'message':           row[1],
+            'created_at':        str(row[2]),
+            'section_id':        row[3],   # needed for the respond button
+            'acceptance_status': row[4]    # 0=pending, 1=accepted, 2=denied
+        }
+        for row in rows
+    ]
+    return jsonify({'success': True, 'notifications': notifications})
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ROUTE 4 — Respond to an invitation  (Accept or Deny)
+# POST /respond_invitation
+#
+# Form fields:
+#   section_id   (int)
+#   response     "accept" | "deny"
+#
+# Rules:
+#   - Only the invited user themselves can respond.
+#   - accept → acceptance_status = 1
+#   - deny   → acceptance_status = 2
+#     (row is kept so the leader can later see who declined vs who is pending)
+# ══════════════════════════════════════════════════════════════════════════════
+@app.route('/respond_invitation', methods=['POST'])
+def respond_invitation():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id    = session['user_id']
+    section_id = request.form.get('section_id', type=int)
+    response   = request.form.get('response', '').strip().lower()
+
+    if not section_id or response not in ('accept', 'deny'):
+        return jsonify({'success': False, 'message': 'Invalid section_id or response'}), 400
+
+    new_status = 1 if response == 'accept' else 2
+
+    connection = get_db_connection()
+    cursor     = connection.cursor()
+
+    try:
+        # Confirm the row exists and belongs to the current user
+        cursor.execute(
+            """
+            SELECT acceptance_status FROM section_assignees
+            WHERE section_id = %s AND user_id = %s
+            """,
+            (section_id, user_id)
+        )
+        row = cursor.fetchone()
+
+        if not row:
+            return jsonify({'success': False, 'message': 'Invitation not found'}), 404
+
+        if row[0] != 0:
+            return jsonify({'success': False, 'message': 'You have already responded to this invitation'}), 409
+
+        cursor.execute(
+            """
+            UPDATE section_assignees
+            SET    acceptance_status = %s
+            WHERE  section_id = %s AND user_id = %s
+            """,
+            (new_status, section_id, user_id)
+        )
+        connection.commit()
+
+        label = "accepted" if new_status == 1 else "denied"
+        return jsonify({'success': True, 'message': f'Invitation {label} successfully.'})
+
+    except Exception as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
+
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════════
+# ── DOCUMENTATION ─────────────────────────────────────────────────────────────
+#
+#  HELPER
+#  ──────
+#  save_upload(file, subfolder, prefix)
+#    Validates the file extension, saves to static/uploads/<subfolder>/,
+#    and returns the relative path string for storing in the DB.
+#    Returns None if no file was sent or the extension is invalid.
+#    Used by both /project_setup cover pic and per-section pictures.
+#
+#
+#  ROUTE 1 — GET /search_user_by_email?email=...
+#  ──────────────────────────────────────────────
+#  Live lookup while the leader builds the form. Returns the user's
+#  id, username, email, profile_pic, and position so the UI can render
+#  a small confirmation card before adding them to a section.
+#
+#
+#  ROUTE 2 — POST /project_setup  (multipart/form-data)
+#  ──────────────────────────────────────────────────────
+#  The core creation route. Strict execution order:
+#    1. Fetch leader's name / email / position  →  used in every notification.
+#    2. Save cover pic  →  INSERT projects  →  capture project_id.
+#    3. Loop sections (sections_data JSON string):
+#         Save section pic  →  INSERT project_sections  →  capture section_id.
+#         Loop assignees:
+#           INSERT section_assignees  (acceptance_status = 0, i.e. pending)
+#           INSERT notifications      (pre-formatted invitation message with
+#                                      project name, description, cover link,
+#                                      section info, role, duties, leader info)
+#  The entire operation is inside try/except with rollback() so nothing is
+#  left half-saved if anything fails mid-way.
+#  Returns { success: true, project_id: N } on success.
+#
+#
+#  ROUTE 3 — GET /notifications
+#  ─────────────────────────────
+#  Returns all notifications for the logged-in user, newest first.
+#  Each item includes noti_id, message, created_at, section_id, and
+#  acceptance_status so the frontend knows whether to show the
+#  [ Accept ] / [ Deny ] buttons or a "Already responded" label.
+#
+#
+#  ROUTE 4 — POST /respond_invitation
+#  ────────────────────────────────────
+#  Called when the user taps [ Accept ] or [ Deny ].
+#  Fields: section_id (int), response ("accept" | "deny").
+#  Validates ownership and that the user hasn't already responded,
+#  then sets acceptance_status to 1 (accepted) or 2 (denied).
+#  The row is never deleted — this lets the project leader later query
+#  who accepted, who denied, and who is still pending (status = 0).
+#
+#
+#  acceptance_status  reference:
+#    0 = Pending   (invited, no response yet)
+#    1 = Accepted
+#    2 = Denied
+#
+# ══════════════════════════════════════════════════════════════════════════════
 
 if __name__ == "__main__":
     app.run(debug=True, port=5000)

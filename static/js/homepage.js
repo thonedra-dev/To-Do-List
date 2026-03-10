@@ -423,3 +423,78 @@ function profileStepNextByField(field) {
     const idx = ACTIVE_STEPS.findIndex(s => s.field === field);
     if (idx !== -1) profileStepNext(idx);
 }
+
+// =====================================================================
+// SECTION 8: ACTION HUB  ← NEW
+// Handles the gear button expand/collapse and notification preview.
+// =====================================================================
+
+let hubOpen = false;
+let notiPreviewLoaded = false;
+
+/**
+ * Toggle the hub open / closed.
+ * Clicking outside the hub also closes it (document listener below).
+ */
+function toggleHub() {
+    hubOpen = !hubOpen;
+    document.getElementById('hub-trigger').classList.toggle('open', hubOpen);
+    document.getElementById('hub-items').classList.toggle('open', hubOpen);
+
+    // Lazy-load notification preview the first time hub opens
+    if (hubOpen && !notiPreviewLoaded) {
+        loadNotiPreview();
+    }
+}
+
+/**
+ * Close the hub when clicking anywhere outside it.
+ */
+document.addEventListener('click', function (e) {
+    const hub = document.getElementById('action-hub');
+    if (hub && !hub.contains(e.target) && hubOpen) {
+        hubOpen = false;
+        document.getElementById('hub-trigger').classList.remove('open');
+        document.getElementById('hub-items').classList.remove('open');
+    }
+});
+
+/**
+ * Fetch the latest notifications and:
+ *  1. Show the red dot if there are any pending (acceptance_status = 0).
+ *  2. Populate the hover tooltip with the first ~55 chars of the newest message.
+ */
+async function loadNotiPreview() {
+    notiPreviewLoaded = true;
+    try {
+        const res  = await fetch('/notifications');
+        const data = await res.json();
+
+        if (!data.success || !data.notifications || data.notifications.length === 0) {
+            document.getElementById('noti-preview-tip').textContent = 'No notifications yet.';
+            return;
+        }
+
+        const notifications = data.notifications;
+
+        // Red dot — any pending invitation (acceptance_status === 0)
+        const hasPending = notifications.some(n => n.acceptance_status === 0);
+        if (hasPending) {
+            document.getElementById('noti-dot').classList.add('active');
+        }
+
+        // Tooltip — first few words of the newest message (strip emoji lines, take the project name line)
+        const newest     = notifications[0].message || '';
+        // Grab text up to first newline after "📌 Project :" for a clean preview
+        const lines      = newest.split('\n').map(l => l.trim()).filter(Boolean);
+        const projectLine = lines.find(l => l.includes('📌')) || lines[1] || lines[0];
+        const preview    = projectLine.replace('📌', '').replace('Project :', '').trim();
+        const snippet    = preview.length > 55 ? preview.slice(0, 52) + '…' : preview;
+
+        document.getElementById('noti-preview-tip').textContent =
+            `🔔 ${notifications.length} notification${notifications.length > 1 ? 's' : ''} — ${snippet}`;
+
+    } catch (err) {
+        document.getElementById('noti-preview-tip').textContent = 'Could not load notifications.';
+    }
+}

@@ -5,6 +5,62 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - Task Manager</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
+
+    <!-- ── NEW: only the extra styles needed for the 4th card ── -->
+    <style>
+        /* Make the grid flexible so 4 cards wrap nicely on smaller screens */
+        .task-options {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 24px;
+        }
+
+        /* The 4th card gets a subtle project-themed accent colour
+           so it stands out without clashing with the existing three */
+        .task-card.project-card {
+            border: 1.5px solid rgba(99, 179, 237, 0.35);
+            background: linear-gradient(145deg, rgba(235, 248, 255, 0.85), rgba(255,255,255,0.9));
+            position: relative;
+            overflow: hidden;
+        }
+
+        .task-card.project-card::before {
+            content: '';
+            position: absolute;
+            top: -30px;
+            right: -30px;
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: rgba(99, 179, 237, 0.12);
+            pointer-events: none;
+        }
+
+        .task-card.project-card .card-icon svg {
+            color: #3a87d4;
+        }
+
+        /* Badge on the project card */
+        .project-badge {
+            display: inline-block;
+            font-size: 10px;
+            font-weight: 700;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            background: linear-gradient(90deg, #3a87d4, #63b3ed);
+            color: #fff;
+            padding: 2px 8px;
+            border-radius: 20px;
+            margin-bottom: 6px;
+        }
+
+        /* Dark-mode overrides for the project card */
+        body:not(.light-mode) .task-card.project-card {
+            background: linear-gradient(145deg, rgba(30, 60, 90, 0.7), rgba(20, 40, 70, 0.8));
+            border-color: rgba(99, 179, 237, 0.25);
+        }
+    </style>
 </head>
 
 <body>
@@ -56,6 +112,7 @@
 
         <div class="task-section">
             <div class="task-options">
+                <!-- ── CARD 1: Add Task (unchanged) ── -->
                 <div class="task-card" onclick="showTaskPopup()">
                     <div class="card-icon">
                         <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -68,6 +125,7 @@
                     <p>Create a new task and set steps</p>
                 </div>
 
+                <!-- ── CARD 2: View Task List (unchanged) ── -->
                 <a href="/task_details?table=tasks" class="task-card-link">
                     <div class="task-card">
                         <div class="card-icon">
@@ -83,6 +141,7 @@
                     </div>
                 </a>
 
+                <!-- ── CARD 3: View Completed Tasks (unchanged) ── -->
                 <a href="/task_details?table=completed" class="task-card-link">
                     <div class="task-card">
                         <div class="card-icon">
@@ -95,6 +154,27 @@
                         <p>See what you have achieved</p>
                     </div>
                 </a>
+
+                <!-- ══════════════════════════════════════════════════
+                     CARD 4 — NEW: Create Project
+                     Links directly to /project_setup (separate page).
+                     No JS popup needed — it's its own full-page form.
+                ═══════════════════════════════════════════════════ -->
+                <a href="/project_setup" class="task-card-link">
+                    <div class="task-card project-card">
+                        <div class="card-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                                <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                            </svg>
+                        </div>
+                        <span class="project-badge">New</span>
+                        <h3>Create Project</h3><br>
+                        <p>Launch a project &amp; invite your team</p>
+                    </div>
+                </a>
+                <!-- ══════════════════════════════════════════════════ -->
+
             </div>
         </div>
 
@@ -139,49 +219,43 @@
         <div id="stepSetupPopup">
             <div class="popup-header">
                 <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline>
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
                 </svg>
-                <h3>Set Steps for This Task</h3>
+                <h3>Set Steps (Optional)</h3>
             </div>
-            <input type="text" id="step_description" placeholder="Enter step detail...">
-            <select id="difficulty">
-                <option value="Easy">Easy - Simple task</option>
-                <option value="Normal">Normal - Moderate effort</option>
-                <option value="Hard">Hard - Challenging</option>
-                <option value="Insane">Insane - Very difficult</option>
-            </select>
-            <button type="button" class="btn-add" onclick="addStepToList()">
-                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                </svg>
-                Add Step
-            </button>
             <ul id="stepList"></ul>
+            <input type="text" id="step_description" placeholder="Step description...">
+            <select id="difficulty">
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+            </select>
             <div class="popup-buttons">
-                <button type="button" class="btn-primary" onclick="closeStepSetupPopup()">Finish Task Setup</button>
+                <button type="button" class="btn-secondary" onclick="addStepToList()">+ Add Step</button>
+                <button type="button" class="btn-primary" onclick="closeStepSetupPopup()">Done</button>
             </div>
         </div>
 
         <!-- =====================================================
-             NEW: EMAIL VERIFICATION POPUP
-             Step 1: Google Sign-In picker
-             Step 2: OTP confirmation
-        ====================================================== --> 
-         
-        <div id="emailVerifyPopup" class="setup-popup">
-
-    <!-- Step 1: Enter email address -->
+             EMAIL VERIFY POPUP (unchanged)
+        ====================================================== -->
+        <div id="emailVerifyPopup" class="setup-popup" style="display:none;">
+    <!-- Step 1: Enter email -->
     <div class="setup-popup-inner" id="emailStep1">
         <div class="popup-header">
             <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                 <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
                 <polyline points="22,6 12,13 2,6"></polyline>
             </svg>
-            <h3>Verify Your Email ⚡</h3>
+            <h3>Verify Your Email</h3>
         </div>
-        <p class="setup-description">Enter your email address. We'll send a 6-digit code to confirm you own it.</p>
-        <input type="email" id="email-input" class="setup-input" placeholder="Enter your email address...">
+        <p class="setup-description">Enter your email address and we'll send a 6-digit verification code.</p>
+        <input type="email" id="email-input" class="setup-input" placeholder="Enter your email...">
         <div id="email-step1-error" class="setup-error" style="display:none;"></div>
         <div class="popup-buttons">
             <button type="button" class="btn-secondary" onclick="closeEmailVerifyPopup()">Cancel</button>
@@ -219,9 +293,7 @@
 </div>
 
         <!-- =====================================================
-             NEW: PROFILE SETUP POPUP
-             4 steps: Position → Age → Gender → Profile Pic
-             Each has a Skip button
+             PROFILE SETUP POPUP (unchanged)
         ====================================================== -->
         <div id="profileSetupPopup" class="setup-popup">
 

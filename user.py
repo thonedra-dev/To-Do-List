@@ -8,7 +8,7 @@ from werkzeug.utils import secure_filename
 import requests
 import os
 
-user_bp = Blueprint('user', __name__)  # Create a Flask Blueprint for authentication
+user_bp = Blueprint('user', __name__)  
 
 # --- CONFIGURATION ---
 # ⚠️ REPLACE THIS WITH YOUR REAL APP PASSWORD

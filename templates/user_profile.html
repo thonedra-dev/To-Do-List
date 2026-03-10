@@ -6,6 +6,7 @@
     <title>User Profile - {{ user.username }}</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='css/homepage.css') }}">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/user_profile.css') }}">
+     <script src="https://accounts.google.com/gsi/client" async defer></script>
     
     <script>
         (function () {
@@ -70,7 +71,7 @@
                 <div class="profile-text-info">
                     <h1 id="headerUsername">{{ user.username }}</h1>
                     <p class="user-email-sub" id="headerEmail">{{ user.email }}</p>
-                    <input type="hidden" id="otpCodeHidden" value="">
+                   
                 </div>
                 
             </div>

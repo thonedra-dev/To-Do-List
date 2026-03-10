@@ -422,7 +422,7 @@ def update_profile():
     
     # Get text data from the form
     new_username = request.form.get('username')
-    new_email = request.form.get('email')
+    new_email = request.form.get('email') or None
     new_gender = request.form.get('gender')
     new_position = request.form.get('position')
     

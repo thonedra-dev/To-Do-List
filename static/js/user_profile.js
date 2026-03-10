@@ -439,7 +439,7 @@ function closeGoogleSignInModal() {
 
 async function saveProfile() {
     const username = document.getElementById('usernameInput').value.trim();
-    const email = document.getElementById('emailInput').value.trim();
+    const email = document.getElementById('emailInput').value.trim() || "";
     const gender = document.getElementById('genderInput').value;
     const position = document.getElementById('positionInput').value.trim();
 

@@ -12,13 +12,13 @@ app.register_blueprint(user_bp)  # Register authentication routes
 
 # Function to connect to MySQL
 def get_db_connection():
-    return mysql.connector.connect(
-        host="localhost",
-        user="root",
-        password="your_password",
-        database="todolist",
-        port=4306  # For XAMPP
+    conn = mysql.connector.connect(
+        host="localhost", user="root",
+        password="your_password", database="todolist",
+        port=4306, charset='utf8mb4'   # ← add this
     )
+    conn.set_charset_collation('utf8mb4', 'utf8mb4_unicode_ci')  # ← add this
+    return conn
 
 # Route: Home Page - Fetch Tasks & Completed Tasks
 ALLOWED_EXTENSIONS = {'png', 'jpg', 'jpeg', 'gif', 'webp'}
@@ -563,8 +563,8 @@ def project_setup():
                 )
 
                 cursor.execute(
-                    "INSERT INTO notifications (user_id, message) VALUES (%s, %s)",
-                    (member_user_id, notification_message)
+                    "INSERT INTO notifications (user_id, message, section_id) VALUES (%s, %s, %s)",
+                    (member_user_id, notification_message, section_id)
                 )
 
             connection.commit()
@@ -601,17 +601,18 @@ def get_notifications():
     cursor     = connection.cursor()
 
     cursor.execute(
-        """
-        SELECT n.noti_id, n.message, n.created_at,
-               sa.section_id, sa.acceptance_status
-        FROM notifications n
-        LEFT JOIN section_assignees sa
-               ON sa.user_id = n.user_id
-        WHERE n.user_id = %s
-        ORDER BY n.created_at DESC
-        """,
-        (user_id,)
-    )
+    """
+    SELECT n.noti_id, n.message, n.created_at,
+           n.section_id, sa.acceptance_status
+    FROM notifications n
+    LEFT JOIN section_assignees sa
+           ON sa.section_id = n.section_id
+          AND sa.user_id = n.user_id
+    WHERE n.user_id = %s
+    ORDER BY n.created_at DESC
+    """,
+    (user_id,)
+)
     rows = cursor.fetchall()
     cursor.close()
     connection.close()
@@ -627,6 +628,13 @@ def get_notifications():
         for row in rows
     ]
     return jsonify({'success': True, 'notifications': notifications})
+
+
+@app.route('/notifications_page')
+def notifications_page():
+    if 'user_id' not in session:
+        return redirect('/login')
+    return render_template('notifications.html')
 
 
 # ══════════════════════════════════════════════════════════════════════════════

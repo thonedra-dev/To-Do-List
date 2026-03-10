@@ -4,570 +4,146 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Notifications — Task Manager</title>
-    <style>
-        /* ═══════════════════════════════════════════════════════════
-           THEME VARIABLES  (mirrors homepage palette exactly)
-        ═══════════════════════════════════════════════════════════ */
-        :root {
-            --blue:       #3a87d4;
-            --blue-light: #63b3ed;
-            --blue-dark:  #2563a8;
-            --bg:         #f0f6ff;
-            --surface:    #ffffff;
-            --surface2:   #f7faff;
-            --border:     #d4e4f7;
-            --text:       #1a2a3a;
-            --muted:      #6b8aaa;
-            --success:    #38a169;
-            --danger:     #e53e3e;
-            --warn:       #d97706;
-            --radius:     14px;
-        }
-
-        /* Dark mode — body.light-mode is added by the theme script  */
-        body {
-            /* default = dark */
-            --bg:      #0d1b2e;
-            --surface: #132336;
-            --surface2:#1a2f47;
-            --border:  rgba(99,179,237,0.18);
-            --text:    #e2edf8;
-            --muted:   #7ba8cc;
-        }
-        body.light-mode {
-            --bg:      #f0f6ff;
-            --surface: #ffffff;
-            --surface2:#f7faff;
-            --border:  #d4e4f7;
-            --text:    #1a2a3a;
-            --muted:   #6b8aaa;
-        }
-
-        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-        body {
-            font-family: 'Segoe UI', system-ui, sans-serif;
-            background: var(--bg);
-            color: var(--text);
-            min-height: 100vh;
-            padding-bottom: 60px;
-            transition: background 0.3s, color 0.3s;
-        }
-
-        /* Subtle mesh background */
-        body::before {
-            content: '';
-            position: fixed; inset: 0;
-            background:
-                radial-gradient(ellipse 70% 50% at 80% 10%, rgba(99,179,237,0.12) 0%, transparent 60%),
-                radial-gradient(ellipse 60% 40% at 10% 90%, rgba(58,135,212,0.08) 0%, transparent 55%);
-            pointer-events: none; z-index: 0;
-        }
-
-        /* ── TOP NAV ── */
-        .top-nav {
-            position: sticky; top: 0; z-index: 100;
-            display: flex; align-items: center; justify-content: space-between;
-            padding: 16px 36px;
-            background: rgba(255,255,255,0.06);
-            backdrop-filter: blur(14px);
-            border-bottom: 1px solid var(--border);
-        }
-        body.light-mode .top-nav { background: rgba(255,255,255,0.88); }
-
-        .nav-left { display: flex; align-items: center; gap: 14px; }
-
-        .back-btn {
-            display: flex; align-items: center; gap: 6px;
-            color: var(--blue-light); text-decoration: none;
-            font-weight: 600; font-size: 14px;
-            padding: 6px 14px;
-            border: 1.5px solid rgba(99,179,237,0.35);
-            border-radius: 20px;
-            transition: all 0.2s;
-        }
-        .back-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
-        body.light-mode .back-btn { color: var(--blue); border-color: var(--blue-light); }
-
-        .nav-title {
-            font-size: 18px; font-weight: 800;
-            color: var(--blue-light);
-            letter-spacing: -0.01em;
-        }
-        body.light-mode .nav-title { color: var(--blue-dark); }
-
-        /* Theme toggle in nav */
-        .theme-btn {
-            width: 38px; height: 38px; border-radius: 50%;
-            border: 1.5px solid var(--border);
-            background: var(--surface2);
-            display: flex; align-items: center; justify-content: center;
-            cursor: pointer; transition: all 0.2s;
-        }
-        .theme-btn:hover { background: var(--blue); border-color: var(--blue); }
-        .theme-btn:hover svg { stroke: #fff; }
-
-        /* ── PAGE LAYOUT ── */
-        .page-wrap {
-            position: relative; z-index: 1;
-            max-width: 720px; margin: 36px auto 0;
-            padding: 0 20px;
-        }
-
-        .page-heading {
-            margin-bottom: 28px;
-        }
-        .page-heading h1 {
-            font-size: 26px; font-weight: 800;
-            color: var(--text); letter-spacing: -0.02em;
-        }
-        .page-heading p { margin-top: 4px; color: var(--muted); font-size: 14px; }
-
-        /* Filter tabs */
-        .filter-tabs {
-            display: flex; gap: 8px;
-            margin-bottom: 24px;
-            flex-wrap: wrap;
-        }
-        .filter-tab {
-            padding: 7px 18px;
-            border-radius: 20px;
-            border: 1.5px solid var(--border);
-            background: var(--surface2);
-            color: var(--muted);
-            font-size: 13px; font-weight: 600;
-            cursor: pointer; transition: all 0.18s;
-        }
-        .filter-tab:hover { border-color: var(--blue-light); color: var(--blue); }
-        .filter-tab.active {
-            background: var(--blue); border-color: var(--blue);
-            color: #fff;
-        }
-
-        /* ── NOTIFICATION CARD ── */
-        .noti-card {
-            background: var(--surface);
-            border: 1.5px solid var(--border);
-            border-radius: var(--radius);
-            padding: 22px 24px;
-            margin-bottom: 16px;
-            position: relative;
-            transition: border-color 0.2s, box-shadow 0.2s;
-            animation: slideIn 0.3s ease both;
-        }
-        @keyframes slideIn {
-            from { opacity: 0; transform: translateY(10px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-        .noti-card:hover { border-color: rgba(99,179,237,0.5); box-shadow: 0 4px 20px rgba(58,135,212,0.10); }
-
-        /* Pending cards get a subtle left accent */
-        .noti-card.pending { border-left: 3px solid var(--blue); }
-        .noti-card.accepted { border-left: 3px solid var(--success); opacity: 0.8; }
-        .noti-card.denied   { border-left: 3px solid var(--danger);  opacity: 0.7; }
-
-        /* Card header: time + status badge */
-        .noti-card-head {
-            display: flex; align-items: center; justify-content: space-between;
-            margin-bottom: 14px;
-        }
-        .noti-time {
-            font-size: 11px; color: var(--muted); font-weight: 600;
-            letter-spacing: 0.04em;
-        }
-        .status-badge {
-            font-size: 11px; font-weight: 700; letter-spacing: 0.06em;
-            text-transform: uppercase; padding: 3px 10px; border-radius: 20px;
-        }
-        .status-badge.pending  { background: rgba(58,135,212,0.15); color: var(--blue-light); }
-        .status-badge.accepted { background: rgba(56,161,105,0.15); color: #68d391; }
-        .status-badge.denied   { background: rgba(229,62,62,0.12);  color: #fc8181; }
-        body.light-mode .status-badge.pending  { background: #dbeafe; color: var(--blue-dark); }
-        body.light-mode .status-badge.accepted { background: #c6f6d5; color: #276749; }
-        body.light-mode .status-badge.denied   { background: #fed7d7; color: #9b2c2c; }
-
-        /* Message body — rendered as pre-wrap to keep the formatted text */
-        .noti-message {
-            font-size: 13px; line-height: 1.7;
-            color: var(--text);
-            white-space: pre-wrap;
-            word-break: break-word;
-            background: var(--surface2);
-            border: 1px solid var(--border);
-            border-radius: 10px;
-            padding: 14px 16px;
-            margin-bottom: 16px;
-            font-family: 'Segoe UI', system-ui, sans-serif;
-        }
-
-        /* Accept / Deny buttons */
-        .noti-actions { display: flex; gap: 10px; }
-
-        .btn-accept {
-            padding: 9px 24px;
-            background: linear-gradient(135deg, #38a169, #276749);
-            color: #fff; border: none; border-radius: 9px;
-            font-size: 13px; font-weight: 700; cursor: pointer;
-            transition: transform 0.15s, box-shadow 0.15s;
-            box-shadow: 0 3px 10px rgba(56,161,105,0.3);
-        }
-        .btn-accept:hover { transform: translateY(-1px); box-shadow: 0 5px 16px rgba(56,161,105,0.4); }
-
-        .btn-deny {
-            padding: 9px 24px;
-            background: transparent;
-            color: var(--danger);
-            border: 1.5px solid var(--danger);
-            border-radius: 9px;
-            font-size: 13px; font-weight: 700; cursor: pointer;
-            transition: all 0.15s;
-        }
-        .btn-deny:hover { background: var(--danger); color: #fff; }
-
-        .responded-label {
-            font-size: 13px; font-weight: 700; color: var(--muted);
-            display: flex; align-items: center; gap: 6px;
-        }
-
-        /* ── EMPTY STATE ── */
-        .empty-state {
-            text-align: center; padding: 70px 20px;
-            display: none;
-        }
-        .empty-state.visible { display: block; }
-        .empty-icon { font-size: 52px; margin-bottom: 14px; }
-        .empty-state h3 { font-size: 18px; font-weight: 700; color: var(--text); margin-bottom: 6px; }
-        .empty-state p  { font-size: 14px; color: var(--muted); }
-
-        /* ── LOADING SKELETON ── */
-        .skeleton-card {
-            background: var(--surface); border: 1.5px solid var(--border);
-            border-radius: var(--radius); padding: 22px 24px; margin-bottom: 16px;
-        }
-        .skel-line {
-            height: 12px; border-radius: 6px;
-            background: linear-gradient(90deg, var(--surface2) 25%, var(--border) 50%, var(--surface2) 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.4s infinite;
-            margin-bottom: 10px;
-        }
-        @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
-        .skel-line.short { width: 40%; }
-        .skel-line.medium { width: 70%; }
-
-        /* ── TOAST ── */
-        .toast {
-            position: fixed; bottom: 28px; right: 28px;
-            padding: 13px 20px; border-radius: 11px;
-            font-size: 13px; font-weight: 600; color: #fff;
-            z-index: 9999; opacity: 0; transform: translateY(8px);
-            transition: all 0.28s; pointer-events: none; max-width: 320px;
-        }
-        .toast.show { opacity: 1; transform: translateY(0); }
-        .toast.success { background: var(--success); }
-        .toast.error   { background: var(--danger); }
-
-        .noti-message img {
-    max-width: 100%;
-    max-height: 180px;
-    border-radius: 8px;
-    margin-top: 6px;
-    display: block;
-    object-fit: cover;
-    border: 1px solid var(--border);
-}
-
-    </style>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/notifications.css') }}">
 </head>
 <body>
 
-    <!-- Apply saved theme immediately -->
     <script>
         (function () {
             if (localStorage.getItem('theme') === 'light') document.body.classList.add('light-mode');
         })();
     </script>
 
-    <!-- ── Top Nav ── -->
-    <nav class="top-nav">
+    <!-- ══ NAV ══ -->
+    <nav class="noti-nav">
+
         <div class="nav-left">
-            <a href="/" class="back-btn">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"></polyline></svg>
-                Back
+            <!-- Back arrow only -->
+            <a href="/" class="nav-back" title="Back to Home">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
+                     stroke="currentColor" stroke-width="2.5"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"></polyline>
+                </svg>
             </a>
-            <span class="nav-title">🔔 Notifications</span>
+            <div class="nav-brand">
+                <a href="/" class="brand-link">Task Manager</a>
+                <span class="nav-sep">/</span>
+                <span class="nav-current">Notifications</span>
+            </div>
         </div>
-        <!-- Theme toggle consistent with homepage -->
-        <button class="theme-btn" onclick="togglePageTheme()" title="Toggle Theme">
-            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="var(--blue-light)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="5"></circle>
-                <line x1="12" y1="1"  x2="12" y2="3"></line>
-                <line x1="12" y1="21" x2="12" y2="23"></line>
-                <line x1="4.22" y1="4.22"   x2="5.64" y2="5.64"></line>
-                <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                <line x1="1"  y1="12" x2="3"  y2="12"></line>
-                <line x1="21" y1="12" x2="23" y2="12"></line>
-                <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-            </svg>
-        </button>
+
+        <!-- Right: icon cluster -->
+        <div class="nav-icons">
+
+            <button class="nav-icon-btn" onclick="toggleNotiTheme()" title="Toggle Theme">
+                <svg class="icon-dark" xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+                </svg>
+                <svg class="icon-light" xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="5"></circle>
+                    <line x1="12" y1="1"  x2="12" y2="3"></line><line x1="12" y1="21" x2="12" y2="23"></line>
+                    <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line><line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+                    <line x1="1" y1="12" x2="3" y2="12"></line><line x1="21" y1="12" x2="23" y2="12"></line>
+                    <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line><line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+                </svg>
+            </button>
+
+            <!-- Bell — active accent -->
+            <button class="nav-icon-btn nav-icon-active" title="Notifications — current page">
+                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"></path>
+                    <path d="M13.73 21a2 2 0 0 1-3.46 0"></path>
+                </svg>
+                <span class="noti-dot-nav" id="noti-dot-nav"></span>
+            </button>
+
+            <button class="nav-icon-btn nav-icon-static" title="Chatbox — coming soon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn nav-icon-static" title="Support — coming soon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path>
+                    <line x1="12" y1="17" x2="12.01" y2="17"></line>
+                </svg>
+            </button>
+
+            <button class="nav-icon-btn nav-icon-static" title="About Us — coming soon">
+                <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19"
+                     viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+                     stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8"  x2="12" y2="12"></line>
+                    <line x1="12" y1="16" x2="12.01" y2="16"></line>
+                </svg>
+            </button>
+
+        </div>
     </nav>
 
-    <!-- ── Page ── -->
-    <div class="page-wrap">
+    <!-- ══ LAYOUT ══ -->
+    <div class="noti-layout">
 
-        <div class="page-heading">
-            <h1>Your Notifications</h1>
-            <p id="noti-count-label">Loading…</p>
-        </div>
+        <!-- Left: User profile panel — data injected by Flask -->
+        <aside class="noti-sidebar">
+            <div class="user-panel">
+                <div class="user-avatar-wrap">
+                    {% if profile_pic %}
+                        <img src="{{ url_for('static', filename=profile_pic) }}"
+                             alt="{{ username }}" class="user-avatar-img">
+                    {% else %}
+                        <div class="user-avatar-placeholder">{{ username[0]|upper }}</div>
+                    {% endif %}
+                </div>
+                <div class="user-name">{{ username }}</div>
+                {% if email %}
+                    <div class="user-meta">{{ email }}</div>
+                {% endif %}
+                {% if position %}
+                    <div class="user-position">{{ position }}</div>
+                {% endif %}
+            </div>
+        </aside>
 
-        <!-- Filter tabs -->
-        <div class="filter-tabs">
-            <button class="filter-tab active" data-filter="all"      onclick="applyFilter(this,'all')">All</button>
-            <button class="filter-tab"        data-filter="pending"  onclick="applyFilter(this,'pending')">⏳ Pending</button>
-            <button class="filter-tab"        data-filter="accepted" onclick="applyFilter(this,'accepted')">✅ Accepted</button>
-            <button class="filter-tab"        data-filter="denied"   onclick="applyFilter(this,'denied')">❌ Denied</button>
-        </div>
+        <!-- Right: scrollable notification feed -->
+        <main class="noti-feed" id="noti-feed">
 
-        <!-- Loading skeletons -->
-        <div id="skeleton-wrap">
-            <div class="skeleton-card"><div class="skel-line short"></div><div class="skel-line medium"></div><div class="skel-line"></div></div>
-            <div class="skeleton-card"><div class="skel-line short"></div><div class="skel-line medium"></div><div class="skel-line"></div></div>
-        </div>
+            <div id="skeleton-wrap">
+                <div class="skel-card"><div class="skel-line w40"></div><div class="skel-line w70"></div><div class="skel-line w100"></div><div class="skel-line w60"></div></div>
+                <div class="skel-card"><div class="skel-line w40"></div><div class="skel-line w70"></div><div class="skel-line w100"></div><div class="skel-line w60"></div></div>
+                <div class="skel-card"><div class="skel-line w40"></div><div class="skel-line w70"></div><div class="skel-line w100"></div><div class="skel-line w60"></div></div>
+            </div>
 
-        <!-- Notifications list -->
-        <div id="noti-list"></div>
+            <div id="noti-list"></div>
 
-        <!-- Empty state -->
-        <div class="empty-state" id="empty-state">
-            <div class="empty-icon">📭</div>
-            <h3>All clear!</h3>
-            <p>You don't have any notifications here yet.</p>
-        </div>
+            <div class="empty-state" id="empty-state">
+                <div class="empty-icon">📭</div>
+                <p class="empty-title">No notifications yet</p>
+                <p class="empty-sub">When someone invites you to a project, it will appear here.</p>
+            </div>
 
+        </main>
     </div>
 
     <div class="toast" id="toast"></div>
 
-    <script>
-    // ═══════════════════════════════════════════════════
-    //  THEME  (stays in sync with localStorage like homepage)
-    // ═══════════════════════════════════════════════════
-    function togglePageTheme() {
-        document.body.classList.toggle('light-mode');
-        localStorage.setItem('theme', document.body.classList.contains('light-mode') ? 'light' : 'dark');
-    }
-
-    // ═══════════════════════════════════════════════════
-    //  STATE
-    // ═══════════════════════════════════════════════════
-    let allNotifications = [];   // raw data from /notifications
-    let currentFilter    = 'all';
-
-    // Map acceptance_status → label / class
-    const STATUS_MAP = {
-        0: { label: '⏳ Pending',  cls: 'pending'  },
-        1: { label: '✅ Accepted', cls: 'accepted' },
-        2: { label: '❌ Denied',   cls: 'denied'   },
-    };
-
-    // ═══════════════════════════════════════════════════
-    //  FETCH NOTIFICATIONS
-    // ═══════════════════════════════════════════════════
-    async function loadNotifications() {
-        try {
-            const res  = await fetch('/notifications');
-            const data = await res.json();
-
-            document.getElementById('skeleton-wrap').style.display = 'none';
-
-            if (!data.success) {
-                showToast('Failed to load notifications.', 'error');
-                return;
-            }
-
-            allNotifications = data.notifications || [];
-            renderNotifications();
-
-        } catch (err) {
-            document.getElementById('skeleton-wrap').style.display = 'none';
-            showToast('Network error. Please refresh.', 'error');
-        }
-    }
-
-    // ═══════════════════════════════════════════════════
-    //  RENDER
-    // ═══════════════════════════════════════════════════
-    function renderNotifications() {
-        const list = document.getElementById('noti-list');
-        list.innerHTML = '';
-
-        // Apply filter
-        const filtered = allNotifications.filter(n => {
-            if (currentFilter === 'all')      return true;
-            if (currentFilter === 'pending')  return n.acceptance_status === 0;
-            if (currentFilter === 'accepted') return n.acceptance_status === 1;
-            if (currentFilter === 'denied')   return n.acceptance_status === 2;
-            return true;
-        });
-
-        // Update count label
-        const total   = allNotifications.length;
-        const pending = allNotifications.filter(n => n.acceptance_status === 0).length;
-        document.getElementById('noti-count-label').textContent =
-            `${total} notification${total !== 1 ? 's' : ''}` +
-            (pending > 0 ? ` · ${pending} awaiting your response` : '');
-
-        // Empty state
-        const emptyEl = document.getElementById('empty-state');
-        if (filtered.length === 0) {
-            emptyEl.classList.add('visible');
-            return;
-        }
-        emptyEl.classList.remove('visible');
-
-        // Build cards
-        filtered.forEach(n => {
-            const statusInfo = STATUS_MAP[n.acceptance_status] || STATUS_MAP[0];
-            const card = document.createElement('div');
-            card.className = `noti-card ${statusInfo.cls}`;
-            card.id        = `noti-card-${n.noti_id}`;
-
-            // Format date nicely
-            const dt = new Date(n.created_at);
-            const timeStr = isNaN(dt)
-                ? n.created_at
-                : dt.toLocaleString(undefined, { dateStyle: 'medium', timeStyle: 'short' });
-
-            // Action area: show buttons only if pending
-            let actionsHtml = '';
-            if (n.acceptance_status === 0) {
-                actionsHtml = `
-                    <div class="noti-actions">
-                        <button class="btn-accept"
-                            onclick="respondToInvitation(${n.section_id}, 'accept', ${n.noti_id})">
-                            ✅ Accept
-                        </button>
-                        <button class="btn-deny"
-                            onclick="respondToInvitation(${n.section_id}, 'deny', ${n.noti_id})">
-                            ❌ Deny
-                        </button>
-                    </div>`;
-            } else {
-                const icon = n.acceptance_status === 1 ? '✅' : '❌';
-                const word = n.acceptance_status === 1 ? 'You accepted this invitation.' : 'You declined this invitation.';
-                actionsHtml = `<div class="responded-label">${icon} ${word}</div>`;
-            }
-
-          // Convert the plain-text message into HTML,
-          // swapping any image path line into an actual <img>
-  function formatMessage(raw) {
-      return escapeHtml(raw).replace(
-        // matches the cover line:  📸 Cover     : /uploads/...jpg
-        /(&gt;|)(.*?)(\/uploads\/[^\s]+\.(jpg|jpeg|png|gif|webp))/gi,
-        (match, _arrow, prefix, path) => {
-            // strip the escaped path, render an img instead
-            const cleanPath = path.replace(/&amp;/g, '&');
-            return `${prefix}<img src="/static${cleanPath}"
-                style="max-width:100%;max-height:180px;border-radius:8px;
-                       margin-top:6px;display:block;object-fit:cover;"
-                alt="Cover image">`;
-        }
-    );
-}
-
-card.innerHTML = `
-    <div class="noti-card-head">
-        <span class="noti-time">🕐 ${timeStr}</span>
-        <span class="status-badge ${statusInfo.cls}">${statusInfo.label}</span>
-    </div>
-    <pre class="noti-message">${formatMessage(n.message)}</pre>
-    ${actionsHtml}
-`;
-
-            list.appendChild(card);
-        });
-    }
-
-    // ═══════════════════════════════════════════════════
-    //  RESPOND TO INVITATION  →  POST /respond_invitation
-    // ═══════════════════════════════════════════════════
-    async function respondToInvitation(sectionId, response, notiId) {
-        const card = document.getElementById(`noti-card-${notiId}`);
-
-        // Optimistically disable buttons
-        if (card) {
-            card.querySelectorAll('button').forEach(b => {
-                b.disabled = true;
-                b.style.opacity = '0.6';
-            });
-        }
-
-        try {
-            const fd = new FormData();
-            fd.append('section_id', sectionId);
-            fd.append('response',   response);
-
-            const res  = await fetch('/respond_invitation', { method: 'POST', body: fd });
-            const data = await res.json();
-
-            if (data.success) {
-                const label = response === 'accept' ? 'accepted' : 'denied';
-                showToast(`Invitation ${label} successfully.`, 'success');
-
-                // Update local state and re-render
-                const noti = allNotifications.find(n => n.noti_id === notiId);
-                if (noti) noti.acceptance_status = response === 'accept' ? 1 : 2;
-                renderNotifications();
-
-            } else {
-                showToast(data.message || 'Could not respond. Please try again.', 'error');
-                // Re-enable buttons on failure
-                if (card) {
-                    card.querySelectorAll('button').forEach(b => {
-                        b.disabled = false; b.style.opacity = '1';
-                    });
-                }
-            }
-        } catch (err) {
-            showToast('Network error. Please try again.', 'error');
-        }
-    }
-
-    // ═══════════════════════════════════════════════════
-    //  FILTER TABS
-    // ═══════════════════════════════════════════════════
-    function applyFilter(tabEl, filter) {
-        document.querySelectorAll('.filter-tab').forEach(t => t.classList.remove('active'));
-        tabEl.classList.add('active');
-        currentFilter = filter;
-        renderNotifications();
-    }
-
-    // ═══════════════════════════════════════════════════
-    //  HELPERS
-    // ═══════════════════════════════════════════════════
-    function escapeHtml(str) {
-        return String(str)
-            .replace(/&/g, '&amp;')
-            .replace(/</g, '&lt;')
-            .replace(/>/g, '&gt;');
-    }
-
-    let toastTimer;
-    function showToast(msg, type = 'success') {
-        const el = document.getElementById('toast');
-        clearTimeout(toastTimer);
-        el.textContent = msg;
-        el.className   = `toast ${type} show`;
-        toastTimer = setTimeout(() => el.classList.remove('show'), 3200);
-    }
-
-    // ═══════════════════════════════════════════════════
-    //  INIT
-    // ═══════════════════════════════════════════════════
-    document.addEventListener('DOMContentLoaded', loadNotifications);
-    </script>
-
+    <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 </body>
 </html>

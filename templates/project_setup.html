@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Create Project — Task Manager</title>
+
+    <style>
+        /* ═══════════════════════════════════════════════════════════
+           BASE & THEME  (mirrors the task manager's blue/white palette)
+        ═══════════════════════════════════════════════════════════ */
+        *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+        :root {
+            --blue:        #3a87d4;
+            --blue-light:  #63b3ed;
+            --blue-dark:   #2563a8;
+            --bg:          #f0f6ff;
+            --surface:     #ffffff;
+            --surface2:    #f7faff;
+            --border:      #d4e4f7;
+            --text:        #1a2a3a;
+            --text-muted:  #6b8aaa;
+            --danger:      #e53e3e;
+            --success:     #38a169;
+            --radius:      14px;
+            --shadow:      0 4px 24px rgba(58,135,212,0.10);
+            --shadow-card: 0 2px 16px rgba(58,135,212,0.08);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        /* ── Background mesh (matches homepage feel) ── */
+        body::before {
+            content: '';
+            position: fixed;
+            inset: 0;
+            background:
+                radial-gradient(ellipse 70% 50% at 80% 10%, rgba(99,179,237,0.18) 0%, transparent 60%),
+                radial-gradient(ellipse 60% 40% at 10% 90%, rgba(58,135,212,0.12) 0%, transparent 55%);
+            pointer-events: none;
+            z-index: 0;
+        }
+
+        /* ════════════════ TOP NAV ════════════════ */
+        .top-nav {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 40px;
+            background: rgba(255,255,255,0.85);
+            backdrop-filter: blur(12px);
+            border-bottom: 1px solid var(--border);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .back-btn {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            color: var(--blue);
+            text-decoration: none;
+            font-weight: 600;
+            font-size: 14px;
+            padding: 6px 14px;
+            border: 1.5px solid var(--blue-light);
+            border-radius: 20px;
+            transition: all 0.2s;
+        }
+        .back-btn:hover { background: var(--blue); color: #fff; border-color: var(--blue); }
+
+        .nav-title {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--blue-dark);
+            letter-spacing: 0.02em;
+        }
+
+        /* ════════════════ PAGE LAYOUT ════════════════ */
+        .page-wrap {
+            position: relative;
+            z-index: 1;
+            max-width: 860px;
+            margin: 40px auto 0;
+            padding: 0 20px;
+        }
+
+        .page-heading {
+            text-align: center;
+            margin-bottom: 36px;
+        }
+        .page-heading h1 {
+            font-size: 30px;
+            font-weight: 800;
+            color: var(--blue-dark);
+            letter-spacing: -0.02em;
+        }
+        .page-heading p {
+            margin-top: 6px;
+            color: var(--text-muted);
+            font-size: 15px;
+        }
+
+        /* ════════════════ CARDS ════════════════ */
+        .form-card {
+            background: var(--surface);
+            border: 1.5px solid var(--border);
+            border-radius: var(--radius);
+            padding: 28px 32px;
+            margin-bottom: 24px;
+            box-shadow: var(--shadow-card);
+        }
+
+        .card-title {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-size: 16px;
+            font-weight: 700;
+            color: var(--blue-dark);
+            margin-bottom: 22px;
+            padding-bottom: 12px;
+            border-bottom: 1.5px solid var(--border);
+        }
+        .card-title svg { color: var(--blue); flex-shrink: 0; }
+
+        /* ════════════════ FORM FIELDS ════════════════ */
+        .field-group { margin-bottom: 18px; }
+        .field-group label {
+            display: block;
+            font-size: 13px;
+            font-weight: 600;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.06em;
+            margin-bottom: 7px;
+        }
+        .field-group input[type="text"],
+        .field-group textarea {
+            width: 100%;
+            padding: 11px 14px;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            color: var(--text);
+            background: var(--surface2);
+            transition: border-color 0.2s, box-shadow 0.2s;
+            outline: none;
+            font-family: inherit;
+            resize: vertical;
+        }
+        .field-group input[type="text"]:focus,
+        .field-group textarea:focus {
+            border-color: var(--blue-light);
+            box-shadow: 0 0 0 3px rgba(99,179,237,0.18);
+        }
+        .field-group textarea { min-height: 90px; }
+
+        /* File upload zone */
+        .upload-zone {
+            border: 2px dashed var(--border);
+            border-radius: 10px;
+            padding: 24px;
+            text-align: center;
+            cursor: pointer;
+            transition: border-color 0.2s, background 0.2s;
+            background: var(--surface2);
+        }
+        .upload-zone:hover { border-color: var(--blue-light); background: #f0f8ff; }
+        .upload-zone.has-file { border-color: var(--success); background: #f0fff4; }
+        .upload-zone svg { color: var(--text-muted); margin-bottom: 6px; }
+        .upload-zone p { font-size: 13px; color: var(--text-muted); }
+        .upload-zone .file-name { font-size: 13px; color: var(--success); font-weight: 600; margin-top: 4px; }
+        .upload-zone input[type="file"] { display: none; }
+
+        /* ════════════════ SECTIONS ════════════════ */
+        .section-block {
+            background: var(--surface2);
+            border: 1.5px solid var(--border);
+            border-radius: 12px;
+            padding: 22px 24px;
+            margin-bottom: 18px;
+            position: relative;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+
+        .section-label {
+            font-size: 13px;
+            font-weight: 700;
+            color: var(--blue);
+            text-transform: uppercase;
+            letter-spacing: 0.07em;
+        }
+
+        .remove-section-btn {
+            background: none;
+            border: 1.5px solid #fca5a5;
+            color: var(--danger);
+            border-radius: 8px;
+            padding: 4px 10px;
+            font-size: 12px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .remove-section-btn:hover { background: var(--danger); color: #fff; border-color: var(--danger); }
+
+        /* ════════════════ ASSIGNEES ════════════════ */
+        .assignees-area { margin-top: 14px; }
+
+        .assignee-search-bar {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+        .assignee-search-bar input {
+            flex: 1;
+            padding: 9px 13px;
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            font-size: 13px;
+            background: var(--surface);
+            outline: none;
+            color: var(--text);
+            transition: border-color 0.2s;
+        }
+        .assignee-search-bar input:focus { border-color: var(--blue-light); }
+        .search-btn {
+            padding: 9px 18px;
+            background: var(--blue);
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+        .search-btn:hover { background: var(--blue-dark); }
+        .search-btn:disabled { opacity: 0.6; cursor: not-allowed; }
+
+        /* Search result preview card */
+        .user-preview-card {
+            display: none;
+            align-items: center;
+            gap: 12px;
+            background: var(--surface);
+            border: 1.5px solid #b7d9f7;
+            border-radius: 10px;
+            padding: 11px 14px;
+            margin-bottom: 10px;
+        }
+        .user-preview-card.visible { display: flex; }
+        .user-avatar {
+            width: 40px; height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--blue-light), var(--blue));
+            display: flex; align-items: center; justify-content: center;
+            color: #fff; font-weight: 700; font-size: 15px;
+            overflow: hidden; flex-shrink: 0;
+        }
+        .user-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .user-info-text .uname { font-size: 14px; font-weight: 700; color: var(--text); }
+        .user-info-text .uemail { font-size: 12px; color: var(--text-muted); }
+        .user-info-text .upos { font-size: 12px; color: var(--blue); font-weight: 600; }
+
+        .add-member-fields {
+            display: none;
+            flex-direction: column;
+            gap: 8px;
+            margin-bottom: 10px;
+        }
+        .add-member-fields.visible { display: flex; }
+        .add-member-fields input {
+            padding: 9px 13px;
+            border: 1.5px solid var(--border);
+            border-radius: 9px;
+            font-size: 13px;
+            background: var(--surface);
+            outline: none;
+            color: var(--text);
+        }
+        .add-member-fields input:focus { border-color: var(--blue-light); }
+
+        .confirm-member-btn {
+            align-self: flex-start;
+            padding: 8px 18px;
+            background: var(--success);
+            color: #fff;
+            border: none;
+            border-radius: 9px;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        .confirm-member-btn:hover { background: #2f855a; }
+
+        /* Confirmed assignee chips */
+        .assignees-list { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 6px; }
+        .assignee-chip {
+            display: flex;
+            align-items: center;
+            gap: 7px;
+            background: #e8f4fd;
+            border: 1px solid #b7d9f7;
+            border-radius: 20px;
+            padding: 5px 12px 5px 8px;
+            font-size: 12px;
+            color: var(--blue-dark);
+            font-weight: 600;
+        }
+        .assignee-chip .chip-avatar {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: var(--blue);
+            color: #fff;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 10px; font-weight: 700;
+            overflow: hidden;
+        }
+        .assignee-chip .chip-avatar img { width: 100%; height: 100%; object-fit: cover; border-radius: 50%; }
+        .chip-remove {
+            background: none; border: none;
+            color: #999; cursor: pointer;
+            font-size: 14px; line-height: 1;
+            padding: 0 0 0 4px;
+            transition: color 0.15s;
+        }
+        .chip-remove:hover { color: var(--danger); }
+
+        .search-error {
+            font-size: 12px;
+            color: var(--danger);
+            margin-bottom: 8px;
+            display: none;
+        }
+
+        /* ════════════════ ADD SECTION BTN ════════════════ */
+        .add-section-btn {
+            width: 100%;
+            padding: 13px;
+            background: transparent;
+            border: 2px dashed var(--blue-light);
+            border-radius: 12px;
+            color: var(--blue);
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.2s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            margin-bottom: 24px;
+        }
+        .add-section-btn:hover { background: #e8f4fd; border-color: var(--blue); }
+
+        /* ════════════════ SUBMIT BAR ════════════════ */
+        .submit-bar {
+            display: flex;
+            justify-content: flex-end;
+            gap: 14px;
+            padding: 22px 0;
+        }
+
+        .btn-cancel {
+            padding: 12px 28px;
+            background: transparent;
+            border: 1.5px solid var(--border);
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--text-muted);
+            cursor: pointer;
+            transition: all 0.2s;
+            text-decoration: none;
+        }
+        .btn-cancel:hover { border-color: #aaa; color: var(--text); }
+
+        .btn-submit {
+            padding: 12px 36px;
+            background: linear-gradient(135deg, var(--blue), var(--blue-dark));
+            color: #fff;
+            border: none;
+            border-radius: 10px;
+            font-size: 14px;
+            font-weight: 700;
+            cursor: pointer;
+            box-shadow: 0 4px 14px rgba(58,135,212,0.35);
+            transition: all 0.2s;
+            letter-spacing: 0.02em;
+        }
+        .btn-submit:hover { transform: translateY(-1px); box-shadow: 0 6px 20px rgba(58,135,212,0.4); }
+        .btn-submit:active { transform: translateY(0); }
+        .btn-submit:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+
+        /* ════════════════ TOAST ════════════════ */
+        .toast {
+            position: fixed;
+            bottom: 30px; right: 30px;
+            padding: 14px 22px;
+            border-radius: 12px;
+            font-size: 14px;
+            font-weight: 600;
+            color: #fff;
+            z-index: 9999;
+            opacity: 0;
+            transform: translateY(10px);
+            transition: all 0.3s ease;
+            pointer-events: none;
+            max-width: 340px;
+        }
+        .toast.show { opacity: 1; transform: translateY(0); }
+        .toast.success { background: var(--success); }
+        .toast.error   { background: var(--danger); }
+
+        /* ════════════════ VALIDATION HIGHLIGHT ════════════════ */
+        input.invalid, textarea.invalid { border-color: var(--danger) !important; }
+    </style>
+</head>
+<body>
+
+    <!-- ── Top Nav ── -->
+    <nav class="top-nav">
+        <a href="/" class="back-btn">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <polyline points="15 18 9 12 15 6"></polyline>
+            </svg>
+            Back
+        </a>
+        <span class="nav-title">🚀 Create New Project</span>
+    </nav>
+
+    <!-- ── Page ── -->
+    <div class="page-wrap">
+
+        <div class="page-heading">
+            <h1>Launch Your Project</h1>
+            <p>Fill in the details, add sections, and invite your team members.</p>
+        </div>
+
+        <!-- ════ CARD 1: Project Info ════ -->
+        <div class="form-card">
+            <div class="card-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path>
+                    <polyline points="9 22 9 12 15 12 15 22"></polyline>
+                </svg>
+                Project Details
+            </div>
+
+            <div class="field-group">
+                <label>Project Name *</label>
+                <input type="text" id="project_name" placeholder="e.g. Marketing Campaign Q3…">
+            </div>
+
+            <div class="field-group">
+                <label>Description</label>
+                <textarea id="project_description" placeholder="What is this project about? Goals, context, timeline…"></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Cover Image <span style="font-weight:400;text-transform:none;font-size:11px;">(optional)</span></label>
+                <div class="upload-zone" id="cover-zone" onclick="document.getElementById('cover_pic_input').click()">
+                    <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <p>Click to upload a cover image</p>
+                    <div class="file-name" id="cover-file-name"></div>
+                    <input type="file" id="cover_pic_input" accept="image/*" onchange="handleCoverPic(this)">
+                </div>
+            </div>
+        </div>
+
+        <!-- ════ CARD 2: Sections ════ -->
+        <div class="form-card">
+            <div class="card-title">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="8" y1="6" x2="21" y2="6"></line>
+                    <line x1="8" y1="12" x2="21" y2="12"></line>
+                    <line x1="8" y1="18" x2="21" y2="18"></line>
+                    <line x1="3" y1="6" x2="3.01" y2="6"></line>
+                    <line x1="3" y1="12" x2="3.01" y2="12"></line>
+                    <line x1="3" y1="18" x2="3.01" y2="18"></line>
+                </svg>
+                Project Sections &amp; Team
+            </div>
+
+            <!-- Sections are injected here by JS -->
+            <div id="sections-container"></div>
+
+            <button type="button" class="add-section-btn" onclick="addSection()">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10"></circle>
+                    <line x1="12" y1="8" x2="12" y2="16"></line>
+                    <line x1="8" y1="12" x2="16" y2="12"></line>
+                </svg>
+                Add Section
+            </button>
+        </div>
+
+        <!-- ════ Submit Bar ════ -->
+        <div class="submit-bar">
+            <a href="/" class="btn-cancel">Cancel</a>
+            <button class="btn-submit" id="submit-btn" onclick="submitProject()">
+                🚀 Create Project &amp; Notify Team
+            </button>
+        </div>
+
+    </div><!-- /page-wrap -->
+
+    <!-- Toast -->
+    <div class="toast" id="toast"></div>
+
+    <script>
+    // ═══════════════════════════════════════════════════════════════
+    //  STATE
+    // ═══════════════════════════════════════════════════════════════
+    let sectionCount = 0;   // ever-incrementing ID for section blocks
+
+    // sections[idx] = { description: str, picFile: File|null, assignees: [...] }
+    // assignees item = { user_id, username, email, profile_pic, position, duty, role }
+    const sectionsData = {};
+
+    // ═══════════════════════════════════════════════════════════════
+    //  COVER PIC
+    // ═══════════════════════════════════════════════════════════════
+    function handleCoverPic(input) {
+        const zone = document.getElementById('cover-zone');
+        const label = document.getElementById('cover-file-name');
+        if (input.files && input.files[0]) {
+            label.textContent = input.files[0].name;
+            zone.classList.add('has-file');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  SECTION MANAGEMENT
+    // ═══════════════════════════════════════════════════════════════
+    function addSection() {
+        const idx = sectionCount++;
+        sectionsData[idx] = { description: '', picFile: null, assignees: [] };
+
+        const container = document.getElementById('sections-container');
+        const block = document.createElement('div');
+        block.className = 'section-block';
+        block.id = `section-block-${idx}`;
+        block.innerHTML = `
+            <div class="section-header">
+                <span class="section-label">📂 Section ${idx + 1}</span>
+                <button type="button" class="remove-section-btn" onclick="removeSection(${idx})">✕ Remove</button>
+            </div>
+
+            <div class="field-group">
+                <label>Section Description *</label>
+                <textarea id="sec-desc-${idx}" placeholder="What will this section cover?" rows="2"
+                    oninput="sectionsData[${idx}].description = this.value"></textarea>
+            </div>
+
+            <div class="field-group">
+                <label>Section Image <span style="font-weight:400;text-transform:none;font-size:11px;">(optional)</span></label>
+                <div class="upload-zone" id="sec-pic-zone-${idx}" onclick="document.getElementById('sec-pic-${idx}').click()" style="padding:14px;">
+                    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="8.5" cy="8.5" r="1.5"/>
+                        <polyline points="21 15 16 10 5 21"/>
+                    </svg>
+                    <p>Upload section image</p>
+                    <div class="file-name" id="sec-pic-name-${idx}"></div>
+                    <input type="file" id="sec-pic-${idx}" accept="image/*" onchange="handleSectionPic(this, ${idx})">
+                </div>
+            </div>
+
+            <!-- Assignee search -->
+            <div class="assignees-area">
+                <label style="font-size:13px;font-weight:700;color:var(--text-muted);text-transform:uppercase;letter-spacing:.06em;display:block;margin-bottom:10px;">
+                    👥 Team Members for this Section *
+                </label>
+
+                <div class="assignee-search-bar">
+                    <input type="email" id="search-email-${idx}" placeholder="Search member by email…" 
+                        onkeydown="if(event.key==='Enter'){event.preventDefault();searchUser(${idx});}">
+                    <button type="button" class="search-btn" id="search-btn-${idx}" onclick="searchUser(${idx})">
+                        Search
+                    </button>
+                </div>
+
+                <div class="search-error" id="search-err-${idx}"></div>
+
+                <!-- Preview card shown after successful search -->
+                <div class="user-preview-card" id="user-preview-${idx}">
+                    <div class="user-avatar" id="preview-avatar-${idx}"></div>
+                    <div class="user-info-text">
+                        <div class="uname"  id="preview-name-${idx}"></div>
+                        <div class="uemail" id="preview-email-${idx}"></div>
+                        <div class="upos"   id="preview-pos-${idx}"></div>
+                    </div>
+                </div>
+
+                <!-- Duty / Role fields shown after user is found -->
+                <div class="add-member-fields" id="member-fields-${idx}">
+                    <input type="text" id="member-duty-${idx}" placeholder="Duty description (e.g. Write unit tests)">
+                    <input type="text" id="member-role-${idx}" placeholder="Role (e.g. Developer, Designer)">
+                    <button type="button" class="confirm-member-btn" onclick="confirmMember(${idx})">
+                        ✓ Add to Section
+                    </button>
+                </div>
+
+                <!-- Chips of confirmed assignees -->
+                <div class="assignees-list" id="assignees-list-${idx}"></div>
+            </div>
+        `;
+        container.appendChild(block);
+
+        // Scroll new section into view gently
+        setTimeout(() => block.scrollIntoView({ behavior: 'smooth', block: 'nearest' }), 50);
+    }
+
+    function removeSection(idx) {
+        const block = document.getElementById(`section-block-${idx}`);
+        if (block) block.remove();
+        delete sectionsData[idx];
+    }
+
+    function handleSectionPic(input, idx) {
+        if (input.files && input.files[0]) {
+            sectionsData[idx].picFile = input.files[0];
+            document.getElementById(`sec-pic-name-${idx}`).textContent = input.files[0].name;
+            document.getElementById(`sec-pic-zone-${idx}`).classList.add('has-file');
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  USER SEARCH  →  GET /search_user_by_email
+    // ═══════════════════════════════════════════════════════════════
+
+    // Temporary holder of the found user per section before they confirm
+    const pendingUser = {};
+
+    async function searchUser(idx) {
+        const emailInput = document.getElementById(`search-email-${idx}`);
+        const email = emailInput.value.trim();
+        const errEl = document.getElementById(`search-err-${idx}`);
+        const btn   = document.getElementById(`search-btn-${idx}`);
+
+        // Reset
+        errEl.style.display = 'none';
+        document.getElementById(`user-preview-${idx}`).classList.remove('visible');
+        document.getElementById(`member-fields-${idx}`).classList.remove('visible');
+
+        if (!email || !email.includes('@')) {
+            errEl.textContent = 'Please enter a valid email.';
+            errEl.style.display = 'block';
+            return;
+        }
+
+        btn.disabled    = true;
+        btn.textContent = '…';
+
+        try {
+            const res  = await fetch(`/search_user_by_email?email=${encodeURIComponent(email)}`);
+            const data = await res.json();
+
+            if (!data.success) {
+                errEl.textContent = data.message || 'User not found.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            const u = data.user;
+
+            // Check if already added to this section
+            if (sectionsData[idx] && sectionsData[idx].assignees.find(a => a.user_id === u.id)) {
+                errEl.textContent = 'This user is already added to this section.';
+                errEl.style.display = 'block';
+                return;
+            }
+
+            // Populate preview card
+            const avatarEl = document.getElementById(`preview-avatar-${idx}`);
+            if (u.profile_pic) {
+                avatarEl.innerHTML = `<img src="/static/${u.profile_pic}" alt="">`;
+            } else {
+                avatarEl.textContent = (u.username || '?')[0].toUpperCase();
+            }
+            document.getElementById(`preview-name-${idx}`).textContent  = u.username;
+            document.getElementById(`preview-email-${idx}`).textContent = u.email;
+            document.getElementById(`preview-pos-${idx}`).textContent   = u.position || '';
+
+            document.getElementById(`user-preview-${idx}`).classList.add('visible');
+            document.getElementById(`member-fields-${idx}`).classList.add('visible');
+
+            // Clear duty/role fields
+            document.getElementById(`member-duty-${idx}`).value = '';
+            document.getElementById(`member-role-${idx}`).value = '';
+
+            pendingUser[idx] = u;
+
+        } catch (err) {
+            errEl.textContent = 'Network error. Please try again.';
+            errEl.style.display = 'block';
+        } finally {
+            btn.disabled    = false;
+            btn.textContent = 'Search';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  CONFIRM MEMBER  →  add chip to assignees list
+    // ═══════════════════════════════════════════════════════════════
+    function confirmMember(idx) {
+        const u    = pendingUser[idx];
+        const duty = document.getElementById(`member-duty-${idx}`).value.trim();
+        const role = document.getElementById(`member-role-${idx}`).value.trim();
+
+        if (!u) return;
+
+        // Add to state
+        sectionsData[idx].assignees.push({
+            user_id:     u.id,
+            username:    u.username,
+            email:       u.email,
+            profile_pic: u.profile_pic,
+            duty_description: duty,
+            role:        role
+        });
+
+        // Render chip
+        const list = document.getElementById(`assignees-list-${idx}`);
+        const chip = document.createElement('div');
+        chip.className = 'assignee-chip';
+        chip.id = `chip-${idx}-${u.id}`;
+
+        const avatarHtml = u.profile_pic
+            ? `<img src="/static/${u.profile_pic}" alt="">`
+            : (u.username || '?')[0].toUpperCase();
+
+        chip.innerHTML = `
+            <div class="chip-avatar">${avatarHtml}</div>
+            <span>${u.username}${role ? ' · ' + role : ''}</span>
+            <button class="chip-remove" onclick="removeAssignee(${idx}, ${u.id})" title="Remove">×</button>
+        `;
+        list.appendChild(chip);
+
+        // Reset search UI
+        document.getElementById(`search-email-${idx}`).value = '';
+        document.getElementById(`user-preview-${idx}`).classList.remove('visible');
+        document.getElementById(`member-fields-${idx}`).classList.remove('visible');
+        delete pendingUser[idx];
+    }
+
+    function removeAssignee(sectionIdx, userId) {
+        if (!sectionsData[sectionIdx]) return;
+        sectionsData[sectionIdx].assignees = sectionsData[sectionIdx].assignees.filter(a => a.user_id !== userId);
+        const chip = document.getElementById(`chip-${sectionIdx}-${userId}`);
+        if (chip) chip.remove();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  SUBMIT  →  POST /project_setup  (multipart/form-data)
+    // ═══════════════════════════════════════════════════════════════
+    async function submitProject() {
+        const submitBtn = document.getElementById('submit-btn');
+
+        // ── Validation ──────────────────────────────────────────────
+        const projectName = document.getElementById('project_name').value.trim();
+        if (!projectName) {
+            document.getElementById('project_name').classList.add('invalid');
+            showToast('Please enter a project name.', 'error');
+            document.getElementById('project_name').focus();
+            return;
+        }
+        document.getElementById('project_name').classList.remove('invalid');
+
+        // Gather active sections (those still in the DOM)
+        const activeIdxs = Object.keys(sectionsData).filter(
+            idx => document.getElementById(`section-block-${idx}`)
+        );
+
+        if (activeIdxs.length === 0) {
+            showToast('Add at least one section before submitting.', 'error');
+            return;
+        }
+
+        // Each active section must have a description and at least one assignee
+        for (const idx of activeIdxs) {
+            const descEl = document.getElementById(`sec-desc-${idx}`);
+            const desc   = descEl ? descEl.value.trim() : '';
+            if (!desc) {
+                descEl && descEl.classList.add('invalid');
+                showToast(`Section ${Number(idx) + 1} needs a description.`, 'error');
+                descEl && descEl.focus();
+                return;
+            }
+            descEl && descEl.classList.remove('invalid');
+
+            if (!sectionsData[idx].assignees.length) {
+                showToast(`Section ${Number(idx) + 1} needs at least one team member.`, 'error');
+                return;
+            }
+        }
+
+        // ── Build FormData ───────────────────────────────────────────
+        const fd = new FormData();
+        fd.append('project_name', projectName);
+        fd.append('description',  document.getElementById('project_description').value.trim());
+
+        const coverFile = document.getElementById('cover_pic_input').files[0];
+        if (coverFile) fd.append('project_cover_pic', coverFile);
+
+        // Build sections_data JSON — only include fields backend needs
+        const sectionsPayload = activeIdxs.map((idx, order) => {
+            const s = sectionsData[idx];
+            return {
+                section_description: document.getElementById(`sec-desc-${idx}`).value.trim(),
+                assignees: s.assignees.map(a => ({
+                    user_id:          a.user_id,
+                    duty_description: a.duty_description,
+                    role:             a.role
+                }))
+            };
+        });
+        fd.append('sections_data', JSON.stringify(sectionsPayload));
+
+        // Attach section pic files using order index (matches sections_data array)
+        activeIdxs.forEach((idx, order) => {
+            const picFile = sectionsData[idx].picFile;
+            if (picFile) fd.append(`section_pic_${order}`, picFile);
+        });
+
+        // ── Send ─────────────────────────────────────────────────────
+        submitBtn.disabled    = true;
+        submitBtn.textContent = '⏳ Creating…';
+
+        try {
+            const res  = await fetch('/project_setup', { method: 'POST', body: fd });
+            const data = await res.json();
+
+            if (data.success) {
+                showToast('🎉 Project created! Team members have been notified.', 'success');
+                setTimeout(() => window.location.href = '/', 2200);
+            } else {
+                showToast('Error: ' + (data.message || 'Something went wrong.'), 'error');
+                submitBtn.disabled    = false;
+                submitBtn.textContent = '🚀 Create Project & Notify Team';
+            }
+        } catch (err) {
+            showToast('Network error. Please try again.', 'error');
+            submitBtn.disabled    = false;
+            submitBtn.textContent = '🚀 Create Project & Notify Team';
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  TOAST HELPER
+    // ═══════════════════════════════════════════════════════════════
+    let toastTimer;
+    function showToast(msg, type = 'success') {
+        const el = document.getElementById('toast');
+        clearTimeout(toastTimer);
+        el.textContent = msg;
+        el.className   = `toast ${type} show`;
+        toastTimer = setTimeout(() => { el.classList.remove('show'); }, 3200);
+    }
+
+    // Auto-add first section on load
+    window.addEventListener('DOMContentLoaded', () => addSection());
+    </script>
+
+</body>
+</html>

@@ -634,7 +634,24 @@ def get_notifications():
 def notifications_page():
     if 'user_id' not in session:
         return redirect('/login')
-    return render_template('notifications.html')
+    
+    connection = get_db_connection()
+    cursor     = connection.cursor()
+    cursor.execute(
+        "SELECT username, email, position, profile_pic FROM users WHERE id = %s",
+        (session['user_id'],)
+    )
+    row = cursor.fetchone()
+    cursor.close()
+    connection.close()
+
+    return render_template(
+        'notifications.html',
+        username    = row[0] if row else '',
+        email       = row[1] if row else '',
+        position    = row[2] if row else '',
+        profile_pic = row[3] if row else None
+    )
 
 
 # ══════════════════════════════════════════════════════════════════════════════

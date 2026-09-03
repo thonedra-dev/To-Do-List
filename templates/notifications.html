@@ -17,11 +17,9 @@
         })();
     </script>
 
-    <!-- ══ NAV ══ -->
     <nav class="noti-nav">
 
         <div class="nav-left">
-            <!-- Back arrow only -->
             <a href="/" class="nav-back" title="Back to Home">
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none"
                      stroke="currentColor" stroke-width="2.5"
@@ -36,7 +34,6 @@
             </div>
         </div>
 
-        <!-- Right: icon cluster -->
         <div class="nav-icons">
 
             <button class="nav-icon-btn" onclick="toggleNotiTheme()" title="Toggle Theme">
@@ -56,7 +53,6 @@
                 </svg>
             </button>
 
-            <!-- Bell — active accent -->
             <button class="nav-icon-btn nav-icon-active" title="Notifications — current page">
                 <svg xmlns="http://www.w3.org/2000/svg" width="19" height="19"
                      viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
@@ -98,10 +94,8 @@
         </div>
     </nav>
 
-    <!-- ══ LAYOUT ══ -->
     <div class="noti-layout">
 
-        <!-- Left: User profile panel — data injected by Flask -->
         <aside class="noti-sidebar">
             <div class="user-panel">
                 <div class="user-avatar-wrap">
@@ -122,7 +116,6 @@
             </div>
         </aside>
 
-        <!-- Right: scrollable notification feed -->
         <main class="noti-feed" id="noti-feed">
 
             <div id="skeleton-wrap">
@@ -143,6 +136,15 @@
     </div>
 
     <div class="toast" id="toast"></div>
+
+    <div id="image-modal" class="image-modal" onclick="closeImageModal()">
+        <span class="close-modal" title="Close">&times;</span>
+        <img class="modal-content" id="modal-img" onclick="event.stopPropagation()">
+        <a id="modal-download" class="modal-download-btn" download="Project_Cover" onclick="event.stopPropagation()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download Image
+        </a>
+    </div>
 
     <script src="{{ url_for('static', filename='js/notifications.js') }}"></script>
 </body>

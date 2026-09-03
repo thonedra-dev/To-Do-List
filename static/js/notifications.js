@@ -115,10 +115,17 @@ function buildCard(n) {
     let coverHtml = '';
     if (coverPath) {
         const src = `/static${coverPath.startsWith('/') ? coverPath : '/' + coverPath}`;
-        coverHtml = `<img class="noti-cover-img" src="${esc(src)}" alt="Cover">`;
+        coverHtml = `
+            <div class="cover-img-wrapper" onclick="openImageModal('${esc(src)}')">
+                <img src="${esc(src)}" alt="Cover">
+                <div class="cover-actions">
+                    <a href="${esc(src)}" download="Project_Cover" class="action-btn" title="Download" onclick="event.stopPropagation()">
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                    </a>
+                </div>
+            </div>`;
     }
 
-    // Footer
     let footerHtml = '';
     if (n.acceptance_status === 0) {
         footerHtml = `
@@ -141,49 +148,46 @@ function buildCard(n) {
 
     const initial = (invitedBy || '?')[0].toUpperCase();
 
+    // Format newlines in duties for HTML
+    const formattedDuties = duties ? esc(duties).replace(/\n/g, '<br>') : '';
+    const formattedAbout = about ? esc(about).replace(/\n/g, '<br>') : '';
+
     const card = document.createElement('div');
     card.className = `noti-card ${si.cls}`;
     card.id        = `noti-card-${n.noti_id}`;
     card.innerHTML = `
         <div class="card-header">
-            <span class="card-time">
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
-                     stroke="currentColor" stroke-width="2"
-                     stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10"></circle>
-                    <polyline points="12 6 12 12 16 14"></polyline>
-                </svg>
-                ${fmtDate(n.created_at)}
-            </span>
-            <span class="status-pill ${si.cls}">${si.label}</span>
+            <div class="project-name-headline">${esc(projectName) || 'Untitled Project'}</div>
+            
+            <div class="header-right">
+                <span class="card-time">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none"
+                         stroke="currentColor" stroke-width="2"
+                         stroke-linecap="round" stroke-linejoin="round">
+                        <circle cx="12" cy="12" r="10"></circle>
+                        <polyline points="12 6 12 12 16 14"></polyline>
+                    </svg>
+                    ${fmtDate(n.created_at)}
+                </span>
+                <span class="status-pill ${si.cls}">${si.label}</span>
+            </div>
         </div>
 
         <div class="card-body">
             <div class="card-content-wrap">
                 ${coverHtml}
-                <div class="project-name-headline">${esc(projectName) || 'Untitled Project'}</div>
-                ${about ? `<div class="project-about">${esc(about)}</div>` : ''}
-
-                <div class="info-grid">
-                    <div class="info-cell">
-                        <div class="info-label">📂 Section</div>
-                        <div class="info-value">${esc(section) || '—'}</div>
-                    </div>
-                    <div class="info-cell">
-                        <div class="info-label">🎯 Role</div>
-                        <div class="info-value">${esc(role) || '—'}</div>
-                    </div>
-                    ${duties ? `
-                    <div class="info-cell full">
-                        <div class="info-label">📋 Duties</div>
-                        <div class="info-value">${esc(duties)}</div>
-                    </div>` : ''}
+                
+                <div class="email-body-content">
+                    ${formattedAbout ? `<p class="email-paragraph"><strong>📝 Project Overview</strong><br>${formattedAbout}</p>` : ''}
+                    ${section ? `<p class="email-paragraph"><strong>📂 Section Assignment</strong><br>${esc(section)}</p>` : ''}
+                    ${role ? `<p class="email-paragraph"><strong>🎯 Expected Role</strong><br>${esc(role)}</p>` : ''}
+                    ${formattedDuties ? `<p class="email-paragraph"><strong>📋 Core Duties & Responsibilities</strong><br>${formattedDuties}</p>` : ''}
                 </div>
 
                 <div class="invited-strip">
                     <div class="invited-avatar">${esc(initial)}</div>
                     <div class="invited-text">
-                        <div class="invited-name">Invited by ${esc(invitedBy) || '—'}</div>
+                        <div class="invited-name">Project Invited By ${esc(invitedBy) || '—'} To</div>
                         <div class="invited-meta">
                             ${esc(email) || ''}${position ? ' · ' + esc(position) : ''}
                         </div>
@@ -259,3 +263,21 @@ async function respond(sectionId, response, notiId) {
 //  INIT
 // ═══════════════════════════════════════════════════════
 document.addEventListener('DOMContentLoaded', loadNotifications);
+
+// ═══════════════════════════════════════════════════════
+//  IMAGE MODAL
+// ═══════════════════════════════════════════════════════
+function openImageModal(src) {
+    const modal = document.getElementById('image-modal');
+    const modalImg = document.getElementById('modal-img');
+    const modalDownload = document.getElementById('modal-download');
+    
+    modalImg.src = src;
+    modalDownload.href = src;
+    modal.classList.add('active');
+}
+
+function closeImageModal() {
+    const modal = document.getElementById('image-modal');
+    modal.classList.remove('active');
+}

@@ -1,16 +1,193 @@
 /* ============================================================
    PROJECT CREATOR — /project/new
-   50/50 split:
-   left = 2-step form
-   right = clean 2.5D parallax illustration
+   Unified single-page scene (no page scroll):
+   - One shared atmosphere behind EVERYTHING (blurred artwork)
+   - One shared grid + scanline overlay
+   - Left column  = brand + hero copy + floating parallax hero
+                    + feature chips  (breathing layout)
+   - Right column = glass form card (header pinned, body scrolls)
+   - Parallax vars (--pc-*) are only driven while the cursor is
+     inside the hero illustration.
    ============================================================ */
 
 .pc-page {
+    --pc-x: 0px;
+    --pc-y: 0px;
+    --pc-rotate-x: 0deg;
+    --pc-rotate-y: 0deg;
+    --pc-mx: 50%;
+    --pc-my: 50%;
+
+    position: relative;
+
+    height: 100vh;
+    height: 100dvh;
     min-height: 100vh;
+    min-height: 100dvh;
+
     display: flex;
     align-items: stretch;
-    position: relative;
+    justify-content: center;
+
+    overflow: hidden;
+    isolation: isolate;
+
+    background: var(--bg);
 }
+
+
+/* ============================================================
+   SHARED SCENE — atmosphere, veil, grid, scanlines
+   ============================================================ */
+
+.pc-atmosphere {
+    position: fixed;
+    inset: -20%;
+
+    background-image:
+        url('./assets/parallex/night_work.png');
+
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    filter:
+        blur(90px)
+        saturate(1.9)
+        brightness(0.75);
+
+    opacity: 1;
+
+    transform:
+        translate3d(
+            calc(var(--pc-x) * 0.04),
+            calc(var(--pc-y) * 0.04),
+            0
+        );
+
+    transition:
+        transform 0.7s cubic-bezier(.2, .8, .2, 1);
+
+    will-change: transform;
+
+    z-index: -4;
+    pointer-events: none;
+}
+
+.pc-page--light .pc-atmosphere {
+    background-image:
+        url('./assets/parallex/team_work.png');
+
+    filter:
+        blur(95px)
+        saturate(1.5)
+        brightness(1.15);
+}
+
+.pc-page::before {
+    content: '';
+
+    position: fixed;
+    inset: 0;
+
+    background:
+        radial-gradient(
+            ellipse 90% 80% at 22% 30%,
+            rgba(5, 8, 20, 0.15) 0%,
+            rgba(5, 8, 20, 0.72) 68%,
+            rgba(3, 5, 14, 0.92) 100%
+        );
+
+    z-index: -3;
+    pointer-events: none;
+}
+
+.pc-page--light::before {
+    background:
+        radial-gradient(
+            ellipse 90% 80% at 22% 30%,
+            rgba(255, 255, 255, 0.1) 0%,
+            rgba(228, 236, 250, 0.7) 65%,
+            rgba(214, 224, 245, 0.9) 100%
+        );
+}
+
+.pc-grid {
+    position: fixed;
+    inset: 0;
+
+    background-image:
+        linear-gradient(to right, var(--border) 1px, transparent 1px),
+        linear-gradient(to bottom, var(--border) 1px, transparent 1px);
+
+    background-size: 72px 72px;
+
+    opacity: 0.1;
+
+    -webkit-mask-image:
+        radial-gradient(ellipse at 40% 45%, black 8%, transparent 78%);
+    mask-image:
+        radial-gradient(ellipse at 40% 45%, black 8%, transparent 78%);
+
+    transform:
+        translate3d(
+            calc(var(--pc-x) * 0.08),
+            calc(var(--pc-y) * 0.08),
+            0
+        );
+
+    transition:
+        transform 0.5s cubic-bezier(.2, .8, .2, 1);
+
+    z-index: -2;
+    pointer-events: none;
+}
+
+.pc-scanlines {
+    position: fixed;
+    inset: 0;
+
+    background:
+        repeating-linear-gradient(
+            180deg,
+            rgba(255, 255, 255, 0.022) 0px,
+            rgba(255, 255, 255, 0.022) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+
+    mix-blend-mode: overlay;
+
+    opacity: 0.55;
+
+    animation:
+        pc-scan-drift 14s linear infinite;
+
+    z-index: -1;
+    pointer-events: none;
+}
+
+@keyframes pc-scan-drift {
+    from { background-position: 0 0; }
+    to   { background-position: 0 72px; }
+}
+
+.pc-page--light .pc-scanlines {
+    background:
+        repeating-linear-gradient(
+            180deg,
+            rgba(20, 40, 90, 0.024) 0px,
+            rgba(20, 40, 90, 0.024) 1px,
+            transparent 1px,
+            transparent 4px
+        );
+    opacity: 0.45;
+}
+
+
+/* ============================================================
+   BACK BUTTON
+   ============================================================ */
 
 .pc-back-btn {
     position: fixed;
@@ -47,43 +224,94 @@
     transform: translateX(-2px);
 }
 
+
+/* ============================================================
+   SHELL — the single grid that sorts left / right.
+   ============================================================ */
+
 .pc-shell {
-    display: flex;
+    position: relative;
+    z-index: 1;
+
     width: 100%;
-    min-height: 100vh;
+    max-width: 1360px;
+
+    height: 100%;
+    min-height: 0;
+
+    padding: clamp(32px, 5vh, 56px) 56px;
+
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr);
+    gap: 72px;
+
+    align-items: stretch;
+
+    overflow: hidden;
 }
 
 
 /* ============================================================
-   LEFT: FORM
+   LEFT COLUMN — brand + hero copy + illustration + chips.
+   Tightened typography, generous gaps, no stat row.
    ============================================================ */
 
 .pc-left {
-    width: 50%;
+    height: 100%;
+    min-height: 0;
+
+    display: flex;
+    flex-direction: column;
+
+    /* Breathing room between blocks */
+    gap: clamp(18px, 2.4vh, 28px);
+
+    overflow: hidden;
+}
+
+
+/* Brand */
+.pc-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+
+    align-self: flex-start;
+
+    flex-shrink: 0;
+}
+
+.pc-brand .brand-mark {
+    width: 38px;
+    height: 38px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    padding: 60px 40px;
-}
+    border-radius: 11px;
 
-.pc-left-inner {
-    width: 100%;
-    max-width: 420px;
-}
+    background:
+        linear-gradient(
+            135deg,
+            var(--accent),
+            var(--accent-2)
+        );
 
-.pc-brand {
-    display: flex;
-    align-items: center;
-    gap: 12px;
-    margin-bottom: 28px;
+    color: #0b0d12;
+
+    box-shadow:
+        0 8px 22px var(--accent-soft),
+        inset 0 1px 0 rgba(255, 255, 255, 0.35);
 }
 
 .pc-brand .brand-name {
     font-family: var(--font-display);
     font-size: 1.4em;
     font-weight: 700;
+
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
 }
 
 .pc-brand .brand-name span {
@@ -91,9 +319,505 @@
 }
 
 
+/* Hero copy — smaller and lighter than before, so it
+   doesn't crowd the illustration. */
+.pc-hero-title {
+    font-family: var(--font-display);
+    font-size: clamp(1.35rem, 2.4vh + 0.4rem, 2rem);
+    font-weight: 700;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+
+    color: var(--text-primary);
+
+    max-width: 22ch;
+    margin: 0;
+
+    flex-shrink: 0;
+}
+
+.pc-hero-title em {
+    font-style: italic;
+    font-weight: 700;
+
+    background:
+        linear-gradient(
+            110deg,
+            var(--accent) 0%,
+            var(--accent-2) 60%,
+            var(--accent) 100%
+        );
+
+    -webkit-background-clip: text;
+    background-clip: text;
+
+    -webkit-text-fill-color: transparent;
+    color: transparent;
+}
+
+.pc-hero-sub {
+    font-size: clamp(12.5px, 1.3vh + 0.3rem, 14px);
+    line-height: 1.55;
+
+    color: var(--text-secondary);
+
+    max-width: 46ch;
+    margin: 0;
+
+    flex-shrink: 0;
+}
+
+
 /* ============================================================
-   STEP PROGRESS
+   PARALLAX HERO — free-floating illustration.
+   Grows to fill whatever vertical space remains after the
+   copy + chips. This is the *only* element that listens for
+   the mouse.
    ============================================================ */
+
+.pc-parallax-hero {
+    position: relative;
+
+    flex: 1 1 auto;
+    min-height: 160px;
+    max-height: 440px;
+
+    width: 100%;
+    max-width: 560px;
+
+    align-self: flex-start;
+
+    perspective: 1200px;
+    transform-style: preserve-3d;
+
+    cursor: default;
+}
+
+.pc-parallax-stage {
+    position: absolute;
+    inset: 0;
+
+    transform-style: preserve-3d;
+
+    transform:
+        rotateX(var(--pc-rotate-x))
+        rotateY(var(--pc-rotate-y))
+        scale(1.015);
+
+    transition:
+        transform 0.22s cubic-bezier(.2, .8, .2, 1);
+}
+
+.pc-parallax-glow {
+    position: absolute;
+
+    inset: 4%;
+
+    border-radius: 50%;
+
+    background:
+        radial-gradient(
+            circle,
+            var(--accent-soft) 0%,
+            transparent 62%
+        );
+
+    opacity: 0.5;
+
+    filter: blur(48px);
+
+    pointer-events: none;
+
+    transform:
+        translate3d(
+            calc(var(--pc-x) * -0.35),
+            calc(var(--pc-y) * -0.35),
+            -55px
+        );
+
+    transition:
+        transform 0.45s cubic-bezier(.2, .8, .2, 1);
+
+    z-index: 1;
+}
+
+.pc-parallax-base {
+    position: absolute;
+
+    inset: -2%;
+
+    background-image:
+        url('./assets/parallex/night_work.png');
+
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    transform:
+        translate3d(
+            calc(var(--pc-x) * 0.55),
+            calc(var(--pc-y) * 0.55),
+            0
+        )
+        scale(1.04);
+
+    will-change: transform;
+
+    transition:
+        transform 0.3s cubic-bezier(.2, .8, .2, 1);
+
+    filter:
+        drop-shadow(0 40px 55px rgba(0, 0, 0, 0.55))
+        drop-shadow(0 8px 20px rgba(0, 0, 0, 0.35));
+
+    z-index: 2;
+}
+
+.pc-page--light .pc-parallax-base {
+    background-image:
+        url('./assets/parallex/team_work.png');
+
+    filter:
+        drop-shadow(0 40px 55px rgba(20, 40, 90, 0.28))
+        drop-shadow(0 8px 20px rgba(20, 40, 90, 0.15));
+}
+
+.pc-parallax-layer {
+    position: absolute;
+
+    inset: -2%;
+
+    background-image:
+        url('./assets/parallex/night_work.png');
+
+    background-size: contain;
+    background-position: center;
+    background-repeat: no-repeat;
+
+    pointer-events: none;
+
+    will-change: transform;
+
+    z-index: 3;
+
+    -webkit-mask-image:
+        url('./assets/parallex/nightwork_depth.png');
+    mask-image:
+        url('./assets/parallex/nightwork_depth.png');
+
+    -webkit-mask-size: contain;
+    mask-size: contain;
+
+    -webkit-mask-position: center;
+    mask-position: center;
+
+    -webkit-mask-repeat: no-repeat;
+    mask-repeat: no-repeat;
+
+    -webkit-mask-mode: luminance;
+    mask-mode: luminance;
+
+    opacity: 0.72;
+}
+
+.pc-page--light .pc-parallax-layer {
+    background-image:
+        url('./assets/parallex/team_work.png');
+
+    -webkit-mask-image:
+        url('./assets/parallex/teamwork_depth.png');
+    mask-image:
+        url('./assets/parallex/teamwork_depth.png');
+}
+
+.pc-parallax-mid {
+    transform:
+        translate3d(
+            calc(var(--pc-x) * 1.15),
+            calc(var(--pc-y) * 1.15),
+            20px
+        )
+        scale(1.04);
+
+    opacity: 0.5;
+
+    transition:
+        transform 0.26s cubic-bezier(.2, .8, .2, 1);
+}
+
+.pc-parallax-near {
+    transform:
+        translate3d(
+            calc(var(--pc-x) * 2.1),
+            calc(var(--pc-y) * 2.1),
+            55px
+        )
+        scale(1.04);
+
+    opacity: 0.9;
+
+    filter:
+        contrast(1.045)
+        drop-shadow(0 22px 34px rgba(0, 0, 0, 0.22));
+
+    transition:
+        transform 0.22s cubic-bezier(.2, .8, .2, 1);
+
+    z-index: 4;
+}
+
+.pc-parallax-particles {
+    position: absolute;
+    inset: 0;
+
+    z-index: 5;
+
+    pointer-events: none;
+    overflow: hidden;
+
+    transform-style: preserve-3d;
+}
+
+.pc-particle {
+    position: absolute;
+
+    left: var(--px, 50%);
+    top: var(--py, 50%);
+
+    width: var(--size, 5px);
+    height: var(--size, 5px);
+
+    border-radius: 50%;
+
+    background: var(--accent);
+
+    box-shadow:
+        0 0 10px var(--accent),
+        0 0 22px var(--accent-soft);
+
+    transform:
+        translate3d(
+            calc(var(--pc-x) * var(--depth, 1)),
+            calc(var(--pc-y) * var(--depth, 1)),
+            0
+        );
+
+    transition:
+        transform 0.28s cubic-bezier(.2, .8, .2, 1);
+
+    animation:
+        pc-particle-pulse 4.5s ease-in-out infinite;
+
+    animation-delay:
+        calc(var(--depth, 1) * -0.7s);
+
+    will-change: transform, opacity;
+}
+
+@keyframes pc-particle-pulse {
+    0%, 100% { opacity: 0.22; }
+    50%      { opacity: 0.9;  }
+}
+
+.pc-page--light .pc-particle {
+    box-shadow:
+        0 0 10px var(--accent-2),
+        0 0 22px var(--accent-soft);
+}
+
+.pc-parallax-highlight {
+    position: absolute;
+
+    inset: 0;
+
+    z-index: 6;
+
+    pointer-events: none;
+
+    background:
+        radial-gradient(
+            circle 240px at var(--pc-mx) var(--pc-my),
+            rgba(255, 255, 255, 0.16) 0%,
+            rgba(255, 255, 255, 0.05) 32%,
+            transparent 68%
+        );
+
+    mix-blend-mode: screen;
+
+    opacity: 0.85;
+}
+
+.pc-page--light .pc-parallax-highlight {
+    background:
+        radial-gradient(
+            circle 240px at var(--pc-mx) var(--pc-my),
+            rgba(120, 180, 255, 0.16) 0%,
+            rgba(255, 255, 255, 0.05) 36%,
+            transparent 72%
+        );
+}
+
+
+/* ============================================================
+   FEATURE CHIPS — bottom of the left column, one slim row.
+   ============================================================ */
+
+.pc-chip-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+
+    flex-shrink: 0;
+
+    margin-top: auto;
+}
+
+.pc-chip {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+
+    padding: 6px 12px;
+
+    font-size: 12px;
+    font-weight: 600;
+
+    color: var(--text-secondary);
+
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+
+    transition:
+        border-color 0.2s ease,
+        color 0.2s ease,
+        transform 0.2s ease;
+}
+
+.pc-chip:hover {
+    color: var(--text-primary);
+    border-color: var(--accent);
+    transform: translateY(-1px);
+}
+
+.pc-chip svg {
+    color: var(--accent);
+    flex-shrink: 0;
+}
+
+
+/* Stat row kept in CSS in case you ever want it back.
+   Not rendered by the JSX. */
+.pc-stat-row {
+    display: flex;
+    align-items: center;
+    gap: 22px;
+
+    padding-top: 18px;
+
+    border-top: 1px solid var(--border);
+
+    flex-shrink: 0;
+}
+
+.pc-stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.pc-stat strong {
+    font-family: var(--font-display);
+    font-size: 19px;
+    font-weight: 700;
+
+    color: var(--text-primary);
+
+    letter-spacing: -0.01em;
+}
+
+.pc-stat span {
+    font-size: 11px;
+    font-weight: 500;
+
+    color: var(--text-muted);
+
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+}
+
+
+/* ============================================================
+   RIGHT COLUMN — glass form card.
+   ============================================================ */
+
+.pc-right {
+    height: 100%;
+    min-height: 0;
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    overflow: hidden;
+}
+
+.pc-form-card {
+    width: 100%;
+    max-width: 480px;
+
+    height: 100%;
+    max-height: 100%;
+
+    display: flex;
+    flex-direction: column;
+
+    padding: 36px 36px 30px;
+
+    background:
+        linear-gradient(
+            180deg,
+            var(--surface) 0%,
+            var(--surface-2) 100%
+        );
+
+    border: 1px solid var(--border);
+    border-radius: 24px;
+
+    backdrop-filter: var(--glass-blur);
+    -webkit-backdrop-filter: var(--glass-blur);
+
+    box-shadow:
+        0 30px 80px rgba(0, 0, 0, 0.35),
+        0 4px 18px rgba(0, 0, 0, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+
+    position: relative;
+    overflow: hidden;
+}
+
+.pc-page--light .pc-form-card {
+    box-shadow:
+        0 30px 80px rgba(30, 60, 120, 0.14),
+        0 4px 18px rgba(30, 60, 120, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.6);
+}
+
+.pc-form-header {
+    font-family: var(--font-display);
+    font-size: clamp(1.4rem, 2.4vh + 0.4rem, 1.85rem);
+    font-weight: 700;
+    letter-spacing: -0.015em;
+
+    color: var(--text-primary);
+
+    margin: 0 0 16px;
+
+    flex-shrink: 0;
+}
 
 .pc-step-bar {
     height: 5px;
@@ -103,6 +827,8 @@
 
     overflow: hidden;
     margin-bottom: 8px;
+
+    flex-shrink: 0;
 }
 
 .pc-step-bar-inner {
@@ -131,7 +857,36 @@
     text-transform: uppercase;
     letter-spacing: 0.08em;
 
-    margin-bottom: 26px;
+    margin-bottom: 22px;
+
+    flex-shrink: 0;
+}
+
+.pc-form-body {
+    flex: 1 1 auto;
+    min-height: 0;
+
+    overflow-y: auto;
+    overscroll-behavior: contain;
+
+    padding-right: 8px;
+    margin-right: -8px;
+
+    scrollbar-width: thin;
+    scrollbar-color: var(--border-strong) transparent;
+}
+
+.pc-form-body::-webkit-scrollbar {
+    width: 6px;
+}
+
+.pc-form-body::-webkit-scrollbar-thumb {
+    background: var(--border-strong);
+    border-radius: 999px;
+}
+
+.pc-form-body::-webkit-scrollbar-track {
+    background: transparent;
 }
 
 
@@ -162,15 +917,16 @@
    ============================================================ */
 
 .pc-title {
-    font-size: 24px;
-    margin-bottom: 6px;
+    font-size: 17px;
+    margin: 0 0 6px;
+    color: var(--text-primary);
 }
 
 .pc-subtitle {
     font-size: 13.5px;
     color: var(--text-secondary);
 
-    margin-bottom: 24px;
+    margin: 0 0 20px;
     line-height: 1.55;
 }
 
@@ -235,7 +991,7 @@
 
 .pc-textarea {
     resize: vertical;
-    min-height: 90px;
+    min-height: 80px;
     line-height: 1.5;
 }
 
@@ -256,7 +1012,7 @@
     align-items: center;
 
     gap: 8px;
-    padding: 26px 16px;
+    padding: 22px 16px;
 
     border: 2px dashed var(--border-strong);
     border-radius: var(--radius-md);
@@ -300,7 +1056,7 @@
 .pc-actions {
     display: flex;
     justify-content: flex-end;
-    margin-top: 26px;
+    margin-top: 22px;
 }
 
 .pc-actions-split {
@@ -465,7 +1221,7 @@
    ============================================================ */
 
 .pc-roster-wrap {
-    margin-top: 26px;
+    margin-top: 22px;
 }
 
 .pc-roster-label {
@@ -538,8 +1294,7 @@
 
     transform: translateY(-2px);
 
-    box-shadow:
-        var(--shadow-sm);
+    box-shadow: var(--shadow-sm);
 }
 
 .pc-roster-avatar {
@@ -620,316 +1375,25 @@
 
 
 /* ============================================================
-   RIGHT — CLEAN 2.5D PARALLAX
-   ============================================================ */
-
-.pc-right {
-    --pc-x: 0px;
-    --pc-y: 0px;
-    --pc-rotate-x: 0deg;
-    --pc-rotate-y: 0deg;
-
-    width: 50%;
-    position: relative;
-
-    overflow: hidden;
-
-    background: var(--bg);
-
-    perspective: 1200px;
-
-    isolation: isolate;
-}
-
-
-/* ------------------------------------------------------------
-   Stage
-   ------------------------------------------------------------ */
-
-.pc-parallax-stage {
-    position: absolute;
-    inset: 0;
-
-    overflow: hidden;
-
-    transform-style: preserve-3d;
-
-    transform:
-        rotateX(var(--pc-rotate-x))
-        rotateY(var(--pc-rotate-y))
-        scale(1.015);
-
-    transition:
-        transform 0.18s cubic-bezier(.2, .8, .2, 1);
-}
-
-
-/* ------------------------------------------------------------
-   Ambient glow
-   ------------------------------------------------------------ */
-
-.pc-parallax-glow {
-    position: absolute;
-
-    width: 70%;
-    height: 70%;
-
-    left: 15%;
-    top: 15%;
-
-    border-radius: 50%;
-
-    background:
-        radial-gradient(
-            circle,
-            var(--accent-soft) 0%,
-            transparent 68%
-        );
-
-    opacity: 0.16;
-
-    filter: blur(45px);
-
-    pointer-events: none;
-
-    transform:
-        translate3d(
-            calc(var(--pc-x) * 0.25),
-            calc(var(--pc-y) * 0.25),
-            -20px
-        );
-
-    transition:
-        transform 0.3s cubic-bezier(.2, .8, .2, 1);
-}
-
-
-/* ------------------------------------------------------------
-   Base artwork
-   ------------------------------------------------------------ */
-
-/*
- * IMPORTANT:
- * This is the visual anchor.
- *
- * It remains completely sharp at all times.
- * There is intentionally NO blur filter here.
- */
-
-.pc-parallax-base {
-    position: absolute;
-
-    inset: -4%;
-
-    background-image:
-        url('./assets/parallex/team_work.png');
-
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-
-    transform:
-        translate3d(
-            calc(var(--pc-x) * 0.18),
-            calc(var(--pc-y) * 0.18),
-            0
-        );
-
-    will-change: transform;
-
-    transition:
-        transform 0.25s cubic-bezier(.2, .8, .2, 1);
-
-    z-index: 1;
-}
-
-
-/* ------------------------------------------------------------
-   Shared depth layers
-   ------------------------------------------------------------ */
-
-.pc-parallax-layer {
-    position: absolute;
-
-    inset: -4%;
-
-    background-image:
-        url('./assets/parallex/team_work.png');
-
-    background-size: contain;
-    background-position: center;
-    background-repeat: no-repeat;
-
-    pointer-events: none;
-
-    will-change: transform;
-
-    z-index: 2;
-
-    /*
-     * The depth map controls which parts of the image
-     * receive the additional movement.
-     */
-    -webkit-mask-image:
-        url('./assets/parallex/teamwork_depth.png');
-
-    mask-image:
-        url('./assets/parallex/teamwork_depth.png');
-
-    -webkit-mask-size: contain;
-    mask-size: contain;
-
-    -webkit-mask-position: center;
-    mask-position: center;
-
-    -webkit-mask-repeat: no-repeat;
-    mask-repeat: no-repeat;
-
-    -webkit-mask-mode: luminance;
-    mask-mode: luminance;
-
-    /*
-     * Keeps the duplicated depth pass visually restrained.
-     */
-    opacity: 0.72;
-}
-
-
-/* ------------------------------------------------------------
-   Mid depth
-   ------------------------------------------------------------ */
-
-.pc-parallax-mid {
-    transform:
-        translate3d(
-            calc(var(--pc-x) * 0.85),
-            calc(var(--pc-y) * 0.85),
-            12px
-        );
-
-    opacity: 0.46;
-
-    transition:
-        transform 0.22s cubic-bezier(.2, .8, .2, 1);
-}
-
-
-/* ------------------------------------------------------------
-   Near depth
-   ------------------------------------------------------------ */
-
-.pc-parallax-near {
-    transform:
-        translate3d(
-            calc(var(--pc-x) * 1.7),
-            calc(var(--pc-y) * 1.7),
-            28px
-        );
-
-    opacity: 0.82;
-
-    filter:
-        contrast(1.035)
-        drop-shadow(
-            0 18px 28px rgba(0, 0, 0, 0.16)
-        );
-
-    transition:
-        transform 0.2s cubic-bezier(.2, .8, .2, 1);
-}
-
-
-/* ------------------------------------------------------------
-   Subtle highlight layer
-   ------------------------------------------------------------ */
-
-.pc-parallax-highlight {
-    position: absolute;
-
-    inset: 0;
-
-    z-index: 5;
-
-    pointer-events: none;
-
-    background:
-        radial-gradient(
-            circle at
-            calc(50% + var(--pc-x) * 2)
-            calc(50% + var(--pc-y) * 2),
-            rgba(255, 255, 255, 0.075),
-            transparent 34%
-        );
-
-    mix-blend-mode: screen;
-
-    opacity: 0.45;
-
-    transition:
-        background-position 0.15s ease;
-}
-
-
-/* ------------------------------------------------------------
-   Edge blending
-   ------------------------------------------------------------ */
-
-.pc-right::before {
-    content: '';
-
-    position: absolute;
-
-    inset: 0;
-
-    z-index: 10;
-
-    pointer-events: none;
-
-    background:
-        linear-gradient(
-            90deg,
-            rgba(0, 0, 0, 0.16) 0%,
-            transparent 14%,
-            transparent 86%,
-            rgba(0, 0, 0, 0.04) 100%
-        );
-
-    opacity: 0.65;
-}
-
-.pc-right::after {
-    content: '';
-
-    position: absolute;
-
-    inset: 0;
-
-    z-index: 11;
-
-    pointer-events: none;
-
-    background:
-        linear-gradient(
-            180deg,
-            rgba(255, 255, 255, 0.025),
-            transparent 18%,
-            transparent 82%,
-            rgba(0, 0, 0, 0.08)
-        );
-}
-
-
-/* ============================================================
    REDUCED MOTION
    ============================================================ */
 
 @media (prefers-reduced-motion: reduce) {
+    .pc-atmosphere,
+    .pc-grid,
+    .pc-scanlines,
     .pc-parallax-stage,
     .pc-parallax-base,
     .pc-parallax-layer,
-    .pc-parallax-glow {
+    .pc-parallax-glow,
+    .pc-particle {
         transform: none !important;
         transition: none !important;
+        animation: none !important;
+    }
+
+    .pc-parallax-highlight {
+        background: none;
     }
 }
 
@@ -938,19 +1402,94 @@
    RESPONSIVE
    ============================================================ */
 
-@media (max-width: 980px) {
-    .pc-right {
-        display: none;
+@media (max-width: 1080px) {
+    .pc-shell {
+        padding: 40px 32px;
+        gap: 48px;
+    }
+}
+
+/* Short viewports: illustration can shrink further, chips
+   stay because they're the only bottom-row content now. */
+@media (max-height: 720px) {
+    .pc-parallax-hero {
+        min-height: 130px;
+        max-height: 320px;
+    }
+
+    .pc-hero-title {
+        font-size: clamp(1.2rem, 2.2vh + 0.3rem, 1.75rem);
+    }
+}
+
+@media (max-width: 900px) {
+    .pc-page {
+        height: auto;
+        min-height: 100dvh;
+        overflow: visible;
+    }
+
+    .pc-shell {
+        grid-template-columns: 1fr;
+        gap: 40px;
+
+        height: auto;
+
+        padding: 96px 28px 48px;
+
+        max-width: 560px;
     }
 
     .pc-left {
+        align-items: center;
+        text-align: center;
+        overflow: visible;
+        height: auto;
+    }
+
+    .pc-brand {
+        align-self: center;
+    }
+
+    .pc-hero-title,
+    .pc-hero-sub {
+        max-width: 100%;
+    }
+
+    .pc-chip-row {
+        justify-content: center;
+        margin-top: 0;
+    }
+
+    .pc-parallax-hero {
         width: 100%;
+        max-width: 100%;
+        min-height: 220px;
+        max-height: 340px;
+        align-self: center;
+    }
+
+    .pc-right {
+        height: auto;
+        overflow: visible;
+    }
+
+    .pc-form-card {
+        height: auto;
+        max-height: none;
+    }
+
+    .pc-form-body {
+        overflow: visible;
+        padding-right: 0;
+        margin-right: 0;
     }
 }
 
 @media (max-width: 600px) {
-    .pc-left {
-        padding: 60px 22px 40px;
+    .pc-form-card {
+        padding: 28px 22px 24px;
+        border-radius: 20px;
     }
 
     .pc-roster-grid {

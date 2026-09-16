@@ -1,0 +1,185 @@
+/* ============================================================
+   GLOBAL BASE STYLES — "SIGNAL TERMINAL" DESIGN SYSTEM
+   Shared across every page: design tokens (colors, radii, fonts),
+   CSS reset, body/background treatment, scrollbar, focus states.
+   No page-specific component rules belong here — those live in
+   each page's own stylesheet (e.g. dashboard.css).
+   ============================================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Sora:wght@500;600;700;800&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600;700&display=swap');
+
+/* ---------- Tokens: dark (default) — GLASS MORPHISM ---------- */
+:root {
+    /* Dark theme base — deep photo backdrop behind frosted glass panels.
+       Surfaces are now DARK-tinted (not white-tinted) at higher opacity,
+       matching the auth page's --card-bg approach — this is what keeps
+       the busy background photo from bleeding through as bright noise. */
+    --bg: #05070c;
+    --bg-grid: rgba(160, 190, 255, 0.04);
+    --surface: rgba(14, 17, 24, 0.62);
+    --surface-2: rgba(14, 17, 24, 0.74);
+    --surface-alt: rgba(14, 17, 24, 0.46);
+    --border: rgba(255, 255, 255, 0.14);
+    --border-strong: rgba(255, 255, 255, 0.26);
+    --text-primary: #f3f6fb;
+    --text-secondary: #b9c2d4;
+    --text-muted: #7c86a0;
+
+    --accent: #7dd8ff;
+    --accent-strong: #9fe6ff;
+    --accent-soft: rgba(125, 216, 255, 0.18);
+    --accent-2: #b39dff;
+    --accent-3: #7dffd6;
+    --accent-glow: 0 0 40px rgba(125, 216, 255, 0.28);
+
+    --danger: #ff8a9a;
+    --danger-soft: rgba(255, 138, 154, 0.16);
+    --warning: #ffd479;
+    --warning-soft: rgba(255, 212, 121, 0.16);
+    --success: #7dffd6;
+    --success-soft: rgba(125, 255, 214, 0.15);
+
+    --cat-work: #7dd8ff;
+    --cat-study: #b39dff;
+    --cat-personal: #7dffd6;
+    --cat-shopping: #ff9de0;
+    --cat-health: #7de0ff;
+    --cat-other: #b9c2d4;
+
+    --radius-lg: 20px;
+    --radius-md: 14px;
+    --radius-sm: 10px;
+    --shadow: 0 40px 80px -30px rgba(0, 0, 0, 0.75), 0 0 0 1px rgba(255,255,255,0.06) inset;
+    --shadow-sm: 0 16px 40px -18px rgba(0, 0, 0, 0.65);
+
+    --font-display: 'Sora', 'Inter', sans-serif;
+    --font-mono: 'IBM Plex Mono', monospace;
+    --font-body: 'Inter', sans-serif;
+    --glass-blur: blur(20px) saturate(150%);
+
+    /* Glassmorphism backdrop photo */
+    --page-bg-image: url('src/assets/backgrounds/dark_mode.png');
+}
+
+body.light-mode {
+    /* Light theme surfaces stay white-tinted (correct on a light photo)
+       but pulled up in opacity so panels read as clearly separated
+       "glass" rather than a faint haze over the image. */
+    --bg: #eef1f6;
+    --bg-grid: rgba(60, 70, 100, 0.05);
+    --surface: rgba(255, 255, 255, 0.6);
+    --surface-2: rgba(255, 255, 255, 0.78);
+    --surface-alt: rgba(255, 255, 255, 0.44);
+    --border: rgba(255, 255, 255, 0.65);
+    --border-strong: rgba(255, 255, 255, 0.85);
+    --text-primary: #1c2333;
+    --text-secondary: #4b5568;
+    --text-muted: #7c869c;
+
+    --accent: #6a5cff;
+    --accent-strong: #5544e8;
+    --accent-soft: rgba(106, 92, 255, 0.14);
+    --accent-2: #3fb8a6;
+    --accent-3: #3fb8a6;
+    --accent-glow: 0 0 40px rgba(106, 92, 255, 0.18);
+
+    --shadow: 0 40px 80px -30px rgba(60, 70, 110, 0.28), 0 0 0 1px rgba(255,255,255,0.5) inset;
+    --shadow-sm: 0 16px 40px -18px rgba(60, 70, 110, 0.2);
+
+    --page-bg-image: url('src/assets/backgrounds/light_mode.png');
+}
+
+/* ---------- Reset & base ---------- */
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    position: relative;
+    background-color: var(--bg);
+    background-image: var(--page-bg-image);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: var(--text-primary);
+    font-family: var(--font-body);
+    line-height: 1.6;
+    transition: background 0.6s ease, color 0.3s ease;
+    overflow-x: hidden;
+}
+
+/* Subtle drifting sheen over the photo backdrop (kept, much softer) */
+body::before {
+    content: '';
+    position: fixed;
+    inset: -20%;
+    z-index: -2;
+    background-image:
+        radial-gradient(600px 400px at 20% 30%, rgba(255,255,255,0.05), transparent 60%),
+        radial-gradient(500px 380px at 80% 65%, rgba(255,255,255,0.04), transparent 60%);
+    background-size: 180% 180%;
+    animation: parallax-drift-slow 34s ease-in-out infinite;
+    pointer-events: none;
+}
+@keyframes parallax-drift-slow {
+    0%, 100% { background-position: 0% 20%, 100% 80%; transform: translateY(0); }
+    50% { background-position: 60% 70%, 20% 10%; transform: translateY(-18px); }
+}
+
+/* Faint overlay to keep text legible over busy photo areas */
+body::after {
+    content: '';
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    background: linear-gradient(180deg, rgba(0,0,0,0.26) 0%, rgba(0,0,0,0.12) 30%, rgba(0,0,0,0.20) 100%);
+    pointer-events: none;
+}
+
+body.light-mode::after {
+    background: linear-gradient(180deg, rgba(255,255,255,0.25) 0%, rgba(255,255,255,0.08) 30%, rgba(255,255,255,0.18) 100%);
+}
+
+h1, h2, h3, h4 {
+    font-family: var(--font-display);
+    margin: 0;
+    color: var(--text-primary);
+    letter-spacing: -0.01em;
+}
+
+button, input, select, textarea { font-family: inherit; color: inherit; }
+a { color: inherit; }
+
+:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+    border-radius: 8px;
+}
+
+::placeholder { color: var(--text-muted); }
+
+::selection { background: var(--accent); color: #1a0f04; }
+
+/* Vite's default template ships a `#root { max-width: 1280px; margin: 0
+   auto; padding: 2rem; }` rule that silently boxes in and centers
+   everything mounted by React — including the topnav, which needs to run
+   edge-to-edge. Neutralize it here so page width is controlled entirely
+   by this stylesheet (.topnav full-bleed, .dash-container capped/centered). */
+#root {
+    max-width: none;
+    margin: 0;
+    padding: 0;
+    text-align: initial;
+    width: 100%;
+}
+
+/* Slim brushed-metal scrollbar */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb {
+    background: linear-gradient(var(--accent), var(--accent-2));
+    border-radius: 999px;
+    border: 2px solid var(--bg);
+}

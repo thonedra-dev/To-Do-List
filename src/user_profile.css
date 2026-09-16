@@ -1,0 +1,743 @@
+/* ============================================================
+   USER PROFILE — GLASSMORPHISM THEME
+   Shares the auth page's token system (--card-bg, --field-border,
+   --brand-primary, etc.) so the profile page, its modals
+   (ProfileFlowModals.jsx) and its inputs (EditableField.jsx) all
+   read as one continuous surface language with LoginRegister.
+   ============================================================ */
+
+:root {
+    --card-bg: rgba(20, 22, 28, 0.14);
+    --card-border: rgba(255, 255, 255, 0.14);
+    --card-shadow: rgba(0, 0, 0, 0.55);
+    --panel-divider: rgba(255, 255, 255, 0.16);
+
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.68);
+    --text-placeholder: rgba(255, 255, 255, 0.5);
+
+    --field-bg: rgba(255, 255, 255, 0.08);
+    --field-border: rgba(255, 255, 255, 0.22);
+    --field-border-focus: rgba(255, 255, 255, 0.55);
+
+    --brand-primary: #6d8cff;
+    --brand-secondary: #8f6dff;
+
+    --success: #6dffb8;
+    --danger: #ff6b6b;
+    --success-bg: rgba(109, 255, 184, 0.12);
+    --danger-bg: rgba(255, 107, 107, 0.12);
+}
+
+body.light-mode {
+    --card-bg: rgba(255, 255, 255, 0.10);
+    --card-border: rgba(255, 255, 255, 0.5);
+    --card-shadow: rgba(80, 40, 120, 0.25);
+    --panel-divider: rgba(36, 27, 58, 0.14);
+
+    --text-primary: #241b3a;
+    --text-secondary: rgba(36, 27, 58, 0.65);
+    --text-placeholder: rgba(36, 27, 58, 0.45);
+
+    --field-bg: rgba(255, 255, 255, 0.35);
+    --field-border: rgba(36, 27, 58, 0.15);
+    --field-border-focus: rgba(36, 27, 58, 0.4);
+
+    --brand-primary: #5b6cf6;
+    --brand-secondary: #7a5cf0;
+}
+
+/* ========================================
+   CONTAINER
+   ======================================== */
+.profile-container {
+    max-width: 840px;
+    margin: 80px auto;
+    padding: 20px;
+    animation: profileFadeIn 0.6s ease-out;
+}
+
+@keyframes profileFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ========================================
+   THEME TOGGLE + BACK NAV
+   ======================================== */
+.theme-toggle {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    padding: 10px 18px;
+    border-radius: 50px;
+    background: var(--field-bg);
+    border: 1px solid var(--field-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--text-primary);
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    z-index: 100;
+    transition: all 0.25s ease;
+}
+
+.theme-toggle:hover {
+    border-color: var(--field-border-focus);
+    transform: translateY(-1px);
+}
+
+.back-nav {
+    position: fixed;
+    top: 30px;
+    left: 30px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 18px;
+    border-radius: 50px;
+    background: var(--field-bg);
+    border: 1px solid var(--field-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    color: var(--text-primary);
+    text-decoration: none;
+    font-weight: 500;
+    font-size: 0.9em;
+    transition: all 0.25s ease;
+    z-index: 100;
+}
+
+.back-nav svg { width: 18px; height: 18px; }
+.back-nav:hover { transform: translateX(-4px); border-color: var(--field-border-focus); }
+
+/* ========================================
+   HEADER CARD (glass, matches .auth-container)
+   ======================================== */
+.profile-card-header {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(16px) saturate(130%);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+    border-radius: 28px;
+    padding: 40px;
+    margin-bottom: 24px;
+    position: relative;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+.profile-main-info { display: flex; align-items: center; gap: 30px; }
+
+.profile-image-large {
+    width: 140px;
+    height: 140px;
+    border-radius: 50%;
+    overflow: hidden;
+    border: 4px solid transparent;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    background-clip: padding-box;
+    box-shadow: 0 0 0 2px var(--card-border), 0 12px 30px rgba(109, 140, 255, 0.25);
+    position: relative;
+    flex-shrink: 0;
+}
+
+.profile-image-large img { width: 100%; height: 100%; object-fit: cover; display: block; }
+
+.initial-placeholder-large {
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 48px;
+    font-weight: 700;
+    color: #ffffff;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+}
+
+.image-preview-badge {
+    position: absolute;
+    bottom: 4px;
+    right: 4px;
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: var(--success);
+    color: #0a0f0a;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 4px 12px var(--card-shadow);
+}
+
+.image-preview-badge.active { opacity: 1; transform: scale(1); }
+.image-preview-badge svg { width: 16px; height: 16px; }
+
+.profile-text-info h1 {
+    color: var(--text-primary);
+    font-size: 32px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+}
+
+.user-email-sub { color: var(--text-secondary); font-size: 16px; }
+
+/* ========================================
+   HEADER ACTION BUTTONS (edit / save / cancel)
+   ======================================== */
+.edit-icon-btn,
+.save-icon-btn,
+.cancel-icon-btn {
+    position: absolute;
+    top: 24px;
+    width: 42px;
+    height: 42px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    background: var(--field-bg);
+    border: 1px solid var(--field-border);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.edit-icon-btn { right: 24px; color: var(--brand-primary); }
+.edit-icon-btn:hover { border-color: var(--brand-primary); transform: scale(1.06); }
+
+.save-icon-btn { right: 74px; color: var(--success); }
+.save-icon-btn:hover { border-color: var(--success); transform: scale(1.06); }
+
+.cancel-icon-btn { right: 24px; color: var(--danger); }
+.cancel-icon-btn:hover { border-color: var(--danger); transform: scale(1.06); }
+
+.edit-icon-btn svg,
+.save-icon-btn svg,
+.cancel-icon-btn svg { width: 18px; height: 18px; }
+
+/* ========================================
+   DETAILS GRID (glass, matches header card)
+   ======================================== */
+.profile-details-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(16px) saturate(130%);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+    border-radius: 28px;
+    padding: 34px;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+.details-section h3 {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    color: var(--text-primary);
+    font-size: 1.05em;
+    font-weight: 700;
+    margin-bottom: 24px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid var(--panel-divider);
+}
+
+.details-section h3 svg { color: var(--brand-primary); flex-shrink: 0; }
+
+/* ========================================
+   DETAIL ITEM (EditableField.jsx renders these)
+   ======================================== */
+.detail-item { margin-bottom: 20px; }
+
+.detail-item label {
+    display: block;
+    font-size: 11px;
+    color: var(--text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.detail-item p {
+    color: var(--text-primary);
+    font-weight: 500;
+    font-size: 16px;
+}
+
+/* Underline inputs — same single-line, no-box treatment as the auth form */
+.detail-item input,
+.detail-item select {
+    width: 100%;
+    background: transparent;
+    border: none;
+    border-bottom: 2px solid var(--field-border);
+    color: var(--text-primary);
+    padding: 10px 2px;
+    font-size: 16px;
+    font-weight: 500;
+    font-family: inherit;
+    outline: none;
+    border-radius: 0;
+    appearance: none;
+    -webkit-appearance: none;
+    transition: border-color 0.25s ease;
+}
+
+.detail-item select {
+    /* keep native dropdown but drop the OS box chrome to match input styling */
+    color-scheme: dark;
+}
+
+body.light-mode .detail-item select { color-scheme: light; }
+
+.detail-item input::placeholder { color: var(--text-placeholder); }
+
+.detail-item input.edit-active,
+.detail-item select.edit-active {
+    border-bottom-color: var(--brand-primary);
+}
+
+.detail-item input:focus,
+.detail-item select:focus {
+    border-bottom-color: var(--brand-primary);
+    box-shadow: 0 1px 0 0 var(--brand-primary);
+}
+
+/* ========================================
+   STATUS INDICATOR
+   ======================================== */
+.status-indicator {
+    display: inline-block;
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: var(--success);
+    margin-right: 8px;
+    box-shadow: 0 0 8px var(--success);
+}
+
+/* ========================================
+   PROFILE PICTURE UPLOAD
+   ======================================== */
+.profile-pic-upload-section {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid var(--panel-divider);
+    display: none;
+}
+
+.profile-pic-upload-section.active { display: block; }
+
+.upload-link {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    border-radius: 14px;
+    border: 1px dashed var(--field-border);
+    color: var(--text-secondary);
+    font-size: 0.88em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+}
+
+.upload-link:hover {
+    border-color: var(--brand-primary);
+    color: var(--text-primary);
+    background: var(--field-bg);
+}
+
+.upload-link svg { width: 18px; height: 18px; flex-shrink: 0; color: var(--brand-primary); }
+
+/* ========================================
+   PROFILE ACTIONS
+   ======================================== */
+.profile-actions { display: flex; margin-top: 30px; }
+
+.btn-logout {
+    padding: 12px 28px;
+    border-radius: 50px;
+    background: var(--danger-bg);
+    border: 1px solid var(--danger);
+    color: var(--danger);
+    font-weight: 600;
+    font-size: 0.9em;
+    text-decoration: none;
+    transition: all 0.25s ease;
+}
+
+.btn-logout:hover {
+    background: var(--danger);
+    color: #ffffff;
+}
+
+/* ==============================================================================
+   MODALS — ProfileFlowModals.jsx
+   Same overlay/card language as the auth page's .modal-backdrop / .glass-modal
+   ============================================================================== */
+.otp-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 15, 0.35);
+    backdrop-filter: blur(6px);
+    -webkit-backdrop-filter: blur(6px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 20px;
+    opacity: 0;
+    animation: otpOverlayIn 0.25s ease forwards;
+}
+
+@keyframes otpOverlayIn { to { opacity: 1; } }
+
+.otp-modal {
+    width: 100%;
+    max-width: 420px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px var(--card-shadow);
+    padding: 44px 40px;
+    text-align: center;
+    animation: otpModalPop 0.3s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes otpModalPop {
+    from { opacity: 0; transform: scale(0.92) translateY(10px); }
+    to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ---------- OTP digits ---------- */
+.otp-icon { font-size: 36px; margin-bottom: 8px; }
+
+.otp-title {
+    color: var(--text-primary);
+    font-size: 1.35em;
+    font-weight: 700;
+    margin-bottom: 8px;
+}
+
+.otp-message {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    line-height: 1.55;
+    margin-bottom: 26px;
+}
+
+.otp-input-container {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 14px;
+}
+
+.otp-digit {
+    width: 46px;
+    height: 56px;
+    text-align: center;
+    font-size: 1.4em;
+    font-weight: 700;
+    color: var(--text-primary);
+    background: var(--field-bg);
+    border: none;
+    border-bottom: 2px solid var(--field-border);
+    border-radius: 10px 10px 0 0;
+    outline: none;
+    font-family: inherit;
+    transition: border-color 0.25s ease, background 0.25s ease;
+}
+
+.otp-digit:focus { border-bottom-color: var(--brand-primary); background: var(--field-bg); }
+
+.otp-error {
+    color: var(--danger);
+    font-size: 0.85em;
+    margin-bottom: 10px;
+}
+
+.otp-verify-btn {
+    width: 100%;
+    padding: 13px 32px;
+    border: none;
+    border-radius: 50px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 0.92em;
+    letter-spacing: 0.4px;
+    cursor: pointer;
+    margin-top: 6px;
+    transition: all 0.25s ease;
+}
+
+.otp-verify-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(109, 140, 255, 0.35);
+}
+
+.otp-footer {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 20px;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.otp-resend { color: var(--text-secondary); font-size: 0.82em; }
+
+.otp-resend-link {
+    color: var(--brand-primary);
+    font-weight: 600;
+}
+
+.otp-resend-link:hover { text-decoration: underline; }
+
+.otp-cancel-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.82em;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 4px 8px;
+    transition: color 0.2s ease;
+}
+
+.otp-cancel-btn:hover { color: var(--text-primary); }
+
+/* ---------- Loading ---------- */
+.loading-modal { padding: 50px 44px; }
+
+.loading-spinner {
+    width: 46px;
+    height: 46px;
+    margin: 0 auto 20px;
+    border: 3px solid var(--field-border);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: otpSpin 0.8s linear infinite;
+}
+
+@keyframes otpSpin { to { transform: rotate(360deg); } }
+
+.loading-text {
+    color: var(--text-primary);
+    font-size: 16px;
+    font-weight: 600;
+}
+
+/* ---------- Success ---------- */
+.success-modal { padding: 50px 44px; }
+
+.success-icon {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, var(--success), #3ee08c);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    color: #0a0f0a;
+    animation: successPop 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+}
+
+@keyframes successPop {
+    0% { transform: scale(0); }
+    50% { transform: scale(1.15); }
+    100% { transform: scale(1); }
+}
+
+.success-title {
+    color: var(--text-primary);
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.success-message { color: var(--text-secondary); font-size: 0.9em; }
+
+/* ---------- Error ---------- */
+.error-modal { padding: 50px 44px; }
+
+.error-icon {
+    width: 68px;
+    height: 68px;
+    margin: 0 auto 20px;
+    background: linear-gradient(135deg, var(--danger), #d6453f);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 34px;
+    color: #ffffff;
+    animation: errorShake 0.5s ease;
+}
+
+@keyframes errorShake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-8px); }
+    75% { transform: translateX(8px); }
+}
+
+.error-title {
+    color: var(--text-primary);
+    font-size: 1.5em;
+    font-weight: 700;
+    margin-bottom: 10px;
+}
+
+.error-message {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    margin-bottom: 24px;
+}
+
+.error-close-btn {
+    background: var(--danger-bg);
+    color: var(--danger);
+    border: 1px solid var(--danger);
+    padding: 12px 30px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.88em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    font-family: 'Poppins', inherit;
+}
+
+.error-close-btn:hover { background: var(--danger); color: #ffffff; }
+
+/* ---------- Google sign-in ---------- */
+.google-signin-modal { padding: 48px 40px; max-width: 460px; }
+
+.google-icon {
+    width: 76px;
+    height: 76px;
+    margin: 0 auto 22px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: 50%;
+    box-shadow: 0 6px 18px var(--card-shadow);
+}
+
+.google-title {
+    color: var(--text-primary);
+    font-size: 1.4em;
+    font-weight: 700;
+    margin-bottom: 14px;
+}
+
+.google-message {
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    line-height: 1.65;
+    margin-bottom: 30px;
+}
+
+.google-message strong { color: var(--text-primary); font-weight: 600; }
+
+#googleSignInButton {
+    display: flex;
+    justify-content: center;
+    margin-bottom: 22px;
+    min-height: 44px;
+}
+
+/* Fallback custom button, in case the GSI script hasn't rendered its own */
+.google-signin-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    background: #ffffff;
+    color: #3c4043;
+    padding: 13px 24px;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.9em;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    box-shadow: 0 4px 14px var(--card-shadow);
+    border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.google-signin-btn:hover { transform: translateY(-2px); box-shadow: 0 8px 20px var(--card-shadow); }
+.google-signin-btn svg { width: 20px; height: 20px; }
+
+.google-footer {
+    margin-top: 26px;
+    padding-top: 22px;
+    border-top: 1px solid var(--panel-divider);
+    text-align: center;
+}
+
+.google-cancel-btn {
+    background: none;
+    border: none;
+    color: var(--text-secondary);
+    font-size: 0.88em;
+    font-weight: 600;
+    cursor: pointer;
+    padding: 8px 20px;
+    border-radius: 50px;
+    transition: all 0.2s ease;
+}
+
+.google-cancel-btn:hover { color: var(--text-primary); background: var(--field-bg); }
+
+.google-security-badge {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 18px;
+    color: var(--success);
+    font-size: 0.8em;
+}
+
+.google-security-badge svg { width: 15px; height: 15px; }
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 860px) {
+    .profile-details-grid { grid-template-columns: 1fr; }
+    .profile-main-info { flex-direction: column; text-align: center; gap: 18px; }
+}
+
+@media (max-width: 640px) {
+    .profile-container { margin: 100px auto 40px; padding: 16px; }
+    .profile-card-header,
+    .profile-details-grid { padding: 26px 22px; border-radius: 22px; }
+    .profile-text-info h1 { font-size: 26px; }
+    .back-nav, .theme-toggle { top: 16px; }
+    .back-nav { left: 16px; }
+    .theme-toggle { right: 16px; }
+
+    .otp-modal,
+    .loading-modal,
+    .success-modal,
+    .error-modal,
+    .google-signin-modal { padding: 34px 24px; max-width: 95%; }
+
+    .otp-digit { width: 40px; height: 50px; font-size: 22px; }
+    .otp-footer { flex-direction: column; align-items: flex-start; }
+}

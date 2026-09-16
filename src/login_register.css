@@ -1,0 +1,880 @@
+/* ========================================
+   AUTH PAGE - GLASSMORPHISM THEME
+   Single card, left-panel content swap,
+   light/dark backgrounds per reference mockups
+   ======================================== */
+
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+/* ========================================
+   CSS VARIABLES
+   ======================================== */
+:root {
+    /* Dark Theme (Default) - tuned against dark_mode.png (night skyline) */
+    --card-bg: rgba(20, 22, 28, 0.14);
+    --card-border: rgba(255, 255, 255, 0.14);
+    --card-shadow: rgba(0, 0, 0, 0.55);
+    --panel-divider: rgba(255, 255, 255, 0.16);
+
+    --text-primary: #ffffff;
+    --text-secondary: rgba(255, 255, 255, 0.68);
+    --text-placeholder: rgba(255, 255, 255, 0.5);
+
+    --field-bg: rgba(255, 255, 255, 0.08);
+    --field-border: rgba(255, 255, 255, 0.22);
+    --field-border-focus: rgba(255, 255, 255, 0.55);
+
+    --nav-link: rgba(255, 255, 255, 0.75);
+    --nav-link-active: #ffffff;
+
+    --toggle-bg: rgba(255, 255, 255, 0.1);
+    --toggle-border: rgba(255, 255, 255, 0.2);
+
+    /* Brand Colors */
+    --brand-primary: #6d8cff;
+    --brand-secondary: #8f6dff;
+}
+
+/* Light Theme - tuned against light_mode.png (pink/purple/yellow gradient) */
+body.light-mode {
+    --card-bg: rgba(255, 255, 255, 0.10);
+    --card-border: rgba(255, 255, 255, 0.5);
+    --card-shadow: rgba(80, 40, 120, 0.25);
+    --panel-divider: rgba(36, 27, 58, 0.14);
+
+    --text-primary: #241b3a;
+    --text-secondary: rgba(36, 27, 58, 0.65);
+    --text-placeholder: rgba(36, 27, 58, 0.45);
+
+    --field-bg: rgba(255, 255, 255, 0.35);
+    --field-border: rgba(36, 27, 58, 0.15);
+    --field-border-focus: rgba(36, 27, 58, 0.4);
+
+    --nav-link: rgba(36, 27, 58, 0.7);
+    --nav-link-active: #241b3a;
+
+    --toggle-bg: rgba(255, 255, 255, 0.6);
+    --toggle-border: rgba(255, 255, 255, 0.8);
+
+    --brand-primary: #5b6cf6;
+    --brand-secondary: #7a5cf0;
+}
+
+/* ========================================
+   GLOBAL RESET & BASE
+   ======================================== */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Poppins', -apple-system, BlinkMacSystemFont, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: background 0.3s ease;
+}
+
+.auth-page {
+    width: 100%;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 40px 20px;
+    position: relative;
+    isolation: isolate;
+}
+
+/* Two full-bleed background layers, stacked and crossfaded via opacity.
+   background-image itself can never be transitioned, which is what was
+   causing the dark/light images to hard-swap out of sync (the "moon
+   split" bug) instead of blending smoothly. */
+.auth-bg-layer {
+    position: fixed;
+    inset: 0;
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    z-index: -1;
+    transition: opacity 0.6s ease;
+}
+
+.auth-bg-layer.dark {
+    background-image: url('./assets/background/dark_mode.png');
+    opacity: 1;
+}
+
+.auth-bg-layer.light {
+    background-image: url('./assets/background/light_mode.png');
+    opacity: 0;
+}
+
+body.light-mode .auth-bg-layer.dark {
+    opacity: 0;
+}
+
+body.light-mode .auth-bg-layer.light {
+    opacity: 1;
+}
+
+/* ========================================
+   THEME TOGGLE
+   ======================================== */
+.theme-toggle {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    width: 44px;
+    height: 44px;
+    background: var(--toggle-bg);
+    border: 1px solid var(--toggle-border);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    transition: transform 0.3s ease, background 0.3s ease;
+}
+
+.theme-toggle:hover {
+    transform: scale(1.08);
+}
+
+/* Animated sun/moon SVG toggle */
+.theme-icon-svg {
+    width: 20px;
+    height: 20px;
+    color: var(--text-primary);
+    overflow: visible;
+    transition: transform 0.5s ease;
+}
+
+.theme-icon-svg .moon-cutout {
+    cx: 17px;
+    transition: cx 0.4s ease;
+}
+
+body.light-mode .theme-icon-svg .moon-cutout {
+    cx: 30px;
+}
+
+.theme-icon-svg .sun-rays {
+    opacity: 0;
+    transform: scale(0.5);
+    transform-origin: 12px 12px;
+    transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+body.light-mode .theme-icon-svg .sun-rays {
+    opacity: 1;
+    transform: scale(1);
+}
+
+body:not(.light-mode) .theme-toggle:hover .theme-icon-svg {
+    transform: rotate(-25deg);
+}
+
+body.light-mode .theme-toggle:hover .theme-icon-svg {
+    transform: rotate(90deg);
+}
+
+/* ========================================
+   MAIN GLASS CARD
+   No outer drop shadow — the card sits flush and
+   "pure" against the background image, no floating
+   shadow padding around it.
+   ======================================== */
+.auth-container {
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(16px) saturate(130%);
+    -webkit-backdrop-filter: blur(16px) saturate(130%);
+    border-radius: 28px;
+    box-shadow: none;
+    position: relative;
+    overflow: hidden;
+    width: 1000px;
+    max-width: 95%;
+    min-height: 560px;
+    display: flex;
+    transition: background 0.4s ease, border-color 0.4s ease;
+}
+
+/* ========================================
+   TOP NAV (Log In / Sign Up — the only content
+   that remains over the right-hand side)
+   ======================================== */
+.auth-nav {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 14px;
+    padding: 28px 36px;
+    z-index: 20;
+}
+
+.auth-nav-btn {
+    padding: 10px 22px;
+    border-radius: 50px;
+    font-size: 0.85em;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Poppins', sans-serif;
+    border: 1px solid transparent;
+    transition: all 0.25s ease;
+    background: transparent;
+    color: var(--nav-link);
+}
+
+.auth-nav-btn:hover {
+    color: var(--nav-link-active);
+}
+
+body:not(.light-mode) .auth-nav-btn.active {
+    background: #ffffff;
+    color: #17181d;
+}
+
+body.light-mode .auth-nav-btn.active {
+    background: #241b3a;
+    color: #ffffff;
+}
+
+/* ========================================
+   LEFT CONTENT PANEL (brand + forms swap in here)
+   ======================================== */
+.auth-left {
+    width: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 40px;
+    position: relative;
+}
+
+/* Thin shadow seam marking the middle of the card — the only visual
+   distinction between left and right, glass density stays identical
+   on both sides. */
+.auth-left::after {
+    content: '';
+    position: absolute;
+    top: 8%;
+    bottom: 8%;
+    right: 0;
+    width: 1px;
+    box-shadow: 0 0 18px 1px var(--panel-divider);
+    background: var(--panel-divider);
+}
+
+.auth-left-inner {
+    width: 100%;
+    max-width: 340px;
+    position: relative;
+}
+
+/* Persistent brand mark — replaces the old "Welcome back" /
+   "Create account" headings, stays put across sign-in/sign-up */
+.auth-left-brand {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 32px;
+}
+
+.auth-left-brand .auth-brand-name {
+    font-size: 1.6em;
+}
+
+.auth-brand-mark {
+    width: 40px;
+    height: 40px;
+    border-radius: 12px;
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    box-shadow: 0 8px 20px rgba(109, 140, 255, 0.35);
+}
+
+.auth-brand-mark svg {
+    width: 22px;
+    height: 22px;
+    stroke: #ffffff;
+}
+
+.auth-brand-mark.small {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+}
+
+.auth-brand-mark.small svg {
+    width: 16px;
+    height: 16px;
+}
+
+.auth-brand-name {
+    font-size: 1.5em;
+    font-weight: 700;
+    color: var(--text-primary);
+    letter-spacing: 0.2px;
+}
+
+.auth-brand-name span {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* Slots stay permanently mounted (needed so the Google button
+   refs never get destroyed) and are shown/hidden with height +
+   opacity + visibility — NEVER display:none, because toggling
+   display resets the autofill transition trick on inputs and
+   causes the yellow/boxed autofill flash to reappear. */
+.auth-form-slot {
+    height: 0;
+    overflow: hidden;
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+}
+
+.auth-form-slot.active {
+    height: auto;
+    overflow: visible;
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    animation: authFadeIn 0.45s ease;
+}
+
+@keyframes authFadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(8px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* Scrollable wrapper for taller forms (sign up) */
+.form-scroll-wrapper {
+    width: 100%;
+    max-height: 80vh;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: var(--brand-primary) transparent;
+}
+
+.form-scroll-wrapper::-webkit-scrollbar {
+    width: 6px;
+}
+
+.form-scroll-wrapper::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.form-scroll-wrapper::-webkit-scrollbar-thumb {
+    background: var(--brand-primary);
+    border-radius: 10px;
+}
+
+/* ========================================
+   RIGHT VISUAL PANEL (3D asset slot)
+   No text content lives here anymore — same
+   transparent surface as .auth-left.
+   ======================================== */
+.auth-right {
+    width: 50%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    overflow: hidden;
+}
+
+.auth-right-visual-slot {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.model3d-canvas-wrap {
+    width: 100%;
+    height: 100%;
+    /* pointer events re-enabled: the 5 orbiting props are individually
+       draggable. The main figure has no pointer handlers, so it never
+       reacts — only hovering/dragging a small prop does anything. */
+}
+
+.model3d-canvas-wrap canvas {
+    outline: none;
+    touch-action: none; /* let per-object drag own touch gestures, no page scroll hijack */
+}
+
+/* ========================================
+   FORM STYLING
+   ======================================== */
+.auth-form {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    width: 100%;
+    max-width: 320px;
+    margin: 0 auto;
+    gap: 18px;
+}
+
+.form-title {
+    font-size: 1.9em;
+    font-weight: 700;
+    color: var(--text-primary);
+    margin-bottom: 6px;
+    letter-spacing: 0.2px;
+}
+
+.form-subtitle {
+    font-size: 0.9em;
+    color: var(--text-secondary);
+    margin-top: -10px;
+    margin-bottom: 4px;
+}
+
+/* Input Groups - single underline field, no labels/headers,
+   no boxed shape in ANY state (default, hover, focus, autofill) */
+.input-group {
+    width: 100%;
+}
+
+.input-field {
+    width: 100%;
+    padding: 12px 4px;
+    border: none;
+    border-bottom: 2px solid var(--field-border);
+    background: transparent;
+    color: var(--text-primary);
+    font-size: 0.98em;
+    outline: none;
+    transition: border-color 0.25s ease;
+    font-family: inherit;
+    border-radius: 0;
+    box-shadow: none;
+    appearance: none;
+    -webkit-appearance: none;
+}
+
+.input-field::placeholder {
+    color: var(--text-placeholder);
+    font-weight: 400;
+}
+
+.input-field:focus,
+.input-field:focus-visible {
+    border-bottom-color: var(--brand-primary);
+    outline: none;
+    box-shadow: none;
+}
+
+.input-field[readonly] {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+
+/* Neutralize the browser's native autofill box/tint (Chrome,
+   Edge, Safari) in every interaction state, so an autofilled
+   field is visually identical to a hand-typed one — always a
+   single underline, never a filled box. */
+.input-field:-webkit-autofill,
+.input-field:-webkit-autofill:hover,
+.input-field:-webkit-autofill:focus,
+.input-field:-webkit-autofill:active {
+    border: none !important;
+    border-bottom: 2px solid var(--field-border) !important;
+    border-radius: 0 !important;
+    -webkit-text-fill-color: var(--text-primary) !important;
+    caret-color: var(--text-primary) !important;
+    background-color: transparent !important;
+    box-shadow: 0 0 0 1000px transparent inset !important;
+    -webkit-box-shadow: 0 0 0 1000px transparent inset !important;
+    transition: background-color 9999s ease-in-out 0s,
+                color 9999s ease-in-out 0s,
+                border-color 0.25s ease !important;
+}
+
+.input-field:-webkit-autofill:focus {
+    border-bottom-color: var(--brand-primary) !important;
+}
+
+/* ========================================
+   BUTTONS
+   ======================================== */
+.btn {
+    padding: 13px 32px;
+    border: none;
+    border-radius: 50px;
+    font-size: 0.9em;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    letter-spacing: 0.4px;
+    font-family: 'Poppins', sans-serif;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, var(--brand-primary), var(--brand-secondary));
+    color: white;
+    width: 100%;
+    margin-top: 6px;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 25px rgba(109, 140, 255, 0.35);
+}
+
+.btn-primary:active {
+    transform: translateY(0);
+}
+
+.btn-link {
+    background: none;
+    border: none;
+    color: var(--brand-primary);
+    font-weight: 600;
+    cursor: pointer;
+    padding: 0;
+    font-size: 0.88em;
+}
+
+.form-error {
+    color: #ff6b6b;
+    font-size: 0.85em;
+}
+
+/* Divider ("OR") */
+.divider {
+    display: flex;
+    align-items: center;
+    text-align: center;
+    margin: 4px 0;
+    color: var(--text-secondary);
+    font-size: 0.8em;
+}
+
+.divider::before, .divider::after {
+    content: '';
+    flex: 1;
+    border-bottom: 1px solid var(--field-border);
+}
+
+.divider:not(:empty)::before { margin-right: .75em; }
+.divider:not(:empty)::after { margin-left: .75em; }
+
+/* File input (profile picture) — short filename only, no preview image
+   in the form itself (kept only for the post-signup welcome popup) */
+.file-input-wrapper {
+    position: relative;
+}
+
+.file-input-wrapper input[type="file"] {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    cursor: pointer;
+}
+
+.file-input-label {
+    display: block;
+    padding: 12px 4px;
+    border-bottom: 2px dashed var(--field-border);
+    color: var(--text-secondary);
+    font-size: 0.9em;
+    cursor: pointer;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ========================================
+   GLASS MODAL (OTP / Loading / Success) — small
+   floating card, does NOT cover the whole background
+   ======================================== */
+.modal-backdrop {
+    position: fixed;
+    inset: 0;
+    background: rgba(10, 10, 15, 0.25);
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+    padding: 20px;
+}
+
+.glass-modal {
+    width: 100%;
+    max-width: 340px;
+    background: var(--card-bg);
+    border: 1px solid var(--card-border);
+    backdrop-filter: blur(30px) saturate(150%);
+    -webkit-backdrop-filter: blur(30px) saturate(150%);
+    border-radius: 22px;
+    box-shadow: 0 20px 50px var(--card-shadow);
+    padding: 36px 30px;
+    text-align: center;
+    animation: modalPop 0.3s ease;
+}
+
+.glass-modal.welcome-modal {
+    max-width: 380px;
+    animation: modalPopBig 0.45s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes modalPop {
+    from {
+        opacity: 0;
+        transform: scale(0.94) translateY(6px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalPopBig {
+    from {
+        opacity: 0;
+        transform: scale(0.85) translateY(24px);
+    }
+    to {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+.glass-modal h2 {
+    color: var(--text-primary);
+    font-size: 1.3em;
+    margin-bottom: 8px;
+}
+
+.glass-modal p {
+    color: var(--text-secondary);
+    font-size: 0.88em;
+    line-height: 1.5;
+}
+
+.otp-input {
+    width: 100%;
+    margin-top: 20px;
+    margin-bottom: 18px;
+    padding: 12px;
+    text-align: center;
+    letter-spacing: 8px;
+    font-size: 1.2em;
+    border: none;
+    border-bottom: 2px solid var(--field-border);
+    background: transparent;
+    color: var(--text-primary);
+    outline: none;
+    font-family: inherit;
+}
+
+.otp-input:focus {
+    border-bottom-color: var(--brand-primary);
+}
+
+.spinner {
+    width: 40px;
+    height: 40px;
+    margin: 0 auto;
+    border: 3px solid var(--field-border);
+    border-top-color: var(--brand-primary);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ========================================
+   SUCCESS MODAL (shown after account creation)
+   ======================================== */
+.success-check svg {
+    width: 70px;
+    height: 70px;
+    margin: 0 auto 10px;
+    display: block;
+}
+
+.success-check-circle {
+    stroke: var(--brand-primary);
+    stroke-width: 2;
+    stroke-dasharray: 166;
+    stroke-dashoffset: 166;
+    animation: successCircle 0.6s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+.success-check-mark {
+    stroke: var(--brand-primary);
+    stroke-width: 3;
+    stroke-dasharray: 48;
+    stroke-dashoffset: 48;
+    animation: successCheck 0.4s 0.5s cubic-bezier(0.65, 0, 0.45, 1) forwards;
+}
+
+@keyframes successCircle {
+    to { stroke-dashoffset: 0; }
+}
+
+@keyframes successCheck {
+    to { stroke-dashoffset: 0; }
+}
+
+.success-fade {
+    opacity: 0;
+    animation: successFadeUp 0.5s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+}
+
+.success-fade.delay-1 { animation-delay: 0.15s; }
+.success-fade.delay-2 { animation-delay: 0.3s; }
+.success-fade.delay-3 { animation-delay: 0.45s; }
+.success-fade.delay-4 { animation-delay: 0.6s; }
+
+@keyframes successFadeUp {
+    from {
+        opacity: 0;
+        transform: translateY(14px) scale(0.97);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+.success-title {
+    color: var(--text-primary);
+    font-size: 1.25em;
+    font-weight: 700;
+    margin-bottom: 4px;
+}
+
+.success-subtitle {
+    color: var(--text-secondary);
+    font-size: 0.88em;
+    margin-bottom: 6px;
+}
+
+.success-avatar {
+    width: 64px;
+    height: 64px;
+    border-radius: 50%;
+    object-fit: cover;
+    margin: 14px auto 10px;
+    display: block;
+    border: 3px solid var(--card-border);
+}
+
+.success-meta {
+    margin-bottom: 18px;
+}
+
+.success-name {
+    color: var(--text-primary);
+    font-weight: 600;
+    font-size: 1.05em;
+}
+
+.success-email {
+    color: var(--text-secondary);
+    font-size: 0.85em;
+    margin-top: 2px;
+}
+
+.success-brand {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    margin-bottom: 22px;
+}
+
+.success-brand .auth-brand-name {
+    font-size: 1em;
+}
+
+/* ========================================
+   RESPONSIVE
+   ======================================== */
+@media (max-width: 900px) {
+    .auth-container {
+        width: 95%;
+        flex-direction: column;
+        min-height: auto;
+    }
+
+    .auth-right {
+        width: 100%;
+        min-height: 280px;
+        order: -1;
+    }
+
+    .auth-left {
+        width: 100%;
+        padding: 32px 28px 40px;
+    }
+
+    .auth-left::after {
+        display: none;
+    }
+
+    .auth-left-brand {
+        margin-bottom: 24px;
+    }
+
+    .auth-nav {
+        padding: 20px 24px;
+    }
+}
+
+@media (max-width: 480px) {
+    .auth-container {
+        border-radius: 20px;
+    }
+
+    .form-title {
+        font-size: 1.6em;
+    }
+
+    .auth-brand-name {
+        font-size: 1.3em;
+    }
+
+    .auth-nav-btn {
+        padding: 8px 16px;
+        font-size: 0.78em;
+    }
+
+    .auth-right {
+        min-height: 220px;
+    }
+}

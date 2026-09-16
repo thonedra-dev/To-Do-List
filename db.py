@@ -25,3 +25,12 @@ def get_db_connection():
 
 def allowed_file(filename: str) -> bool:
     return '.' in filename and filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
+
+def create_notification(cursor, user_id, notif_type, title, message=None, related_id=None):
+    """The ONE place in the codebase that inserts into `notifications`."""
+    cursor.execute("""
+        INSERT INTO notifications (user_id, type, title, message, related_id)
+        VALUES (%s, %s, %s, %s, %s)
+    """, (user_id, notif_type, title, message, related_id))
+    return cursor.lastrowid

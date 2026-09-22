@@ -9,7 +9,7 @@ import requests
 import os
 import json
 
-from db import get_db_connection, allowed_file, ALLOWED_EXTENSIONS
+from db import get_db_connection, allowed_file, ALLOWED_EXTENSIONS, create_notification
 
 user_bp = Blueprint('user', __name__, url_prefix='/api')
 
@@ -34,8 +34,6 @@ UPLOAD_FOLDER = config["app"]["upload_folder"]
 
 # ══════════════════════════════════════════════════════════════════════════
 # POST /register
-# Was: form POST -> redirect. Now: JSON in (multipart, since a file can ride
-# along), JSON out. React sends FormData, same as the old <form> did.
 # ══════════════════════════════════════════════════════════════════════════
 @user_bp.route('/register', methods=['POST'])
 def register():
@@ -71,7 +69,6 @@ def register():
         connection.commit()
         user_id = cursor.lastrowid
 
-        # Log them in immediately, same as before
         session['user_id'] = user_id
 
         return jsonify({'success': True, 'user_id': user_id, 'username': username})
@@ -86,13 +83,12 @@ def register():
 
 # ══════════════════════════════════════════════════════════════════════════
 # POST /login
-# Was: form POST -> redirect or raw HTML error string. Now: JSON both ways.
 # ══════════════════════════════════════════════════════════════════════════
 @user_bp.route('/login', methods=['POST'])
 def login():
     username = request.form.get('username')
     password = request.form.get('password')
-    print(f"DEBUG login: username={username!r} password={password!r} form={dict(request.form)}")  # ADD THIS
+    print(f"DEBUG login: username={username!r} password={password!r} form={dict(request.form)}")
 
     if not username or not password:
         return jsonify({'success': False, 'message': 'Username and password are required'}), 400
@@ -103,7 +99,7 @@ def login():
     try:
         cursor.execute("SELECT id, password FROM users WHERE username = %s", (username,))
         user = cursor.fetchone()
-        print(f"DEBUG login: user_row={user!r}")  # ADD THIS
+        print(f"DEBUG login: user_row={user!r}")
 
         if not user:
             return jsonify({'success': False, 'message': 'Invalid username or password'}), 401
@@ -114,10 +110,10 @@ def login():
             try:
                 password_ok = check_password_hash(stored_hash, password)
             except Exception as e:
-                print(f"DEBUG login: check_password_hash raised: {e!r}")  # ADD THIS
+                print(f"DEBUG login: check_password_hash raised: {e!r}")
                 password_ok = False
 
-        print(f"DEBUG login: password_ok={password_ok}")  # ADD THIS
+        print(f"DEBUG login: password_ok={password_ok}")
 
         if not password_ok:
             return jsonify({'success': False, 'message': 'Invalid username or password'}), 401
@@ -129,8 +125,7 @@ def login():
         connection.close()
 
 # ══════════════════════════════════════════════════════════════════════════
-# POST /logout  (was GET -> redirect; POST is more correct for a mutation,
-# and matches how React will call it: fetch('/logout', {method:'POST'}))
+# POST /logout
 # ══════════════════════════════════════════════════════════════════════════
 @user_bp.route('/logout', methods=['POST'])
 def logout():
@@ -139,10 +134,7 @@ def logout():
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# GET /me — NEW route. The SPA needs a way to check "am I logged in?" on
-# page load (React has no session access of its own). Nothing in the old
-# code covered this because Jinja could just check session server-side
-# before rendering. This is the equivalent for a client that starts blank.
+# GET /me
 # ══════════════════════════════════════════════════════════════════════════
 @user_bp.route('/me')
 def me():
@@ -166,8 +158,7 @@ def me():
         connection.close()
 
 
-# --- GOOGLE AUTH & OTP ROUTES (already JSON in the original — kept as-is,
-#     with imports/config pointed at the shared db module) ---
+# --- GOOGLE AUTH & OTP ROUTES ---
 
 @user_bp.route('/send_verification_otp', methods=['POST'])
 def send_verification_otp():
@@ -249,9 +240,6 @@ def verify_otp():
 
 # ══════════════════════════════════════════════════════════════════════════
 # POST /google_register
-# Was: form POST -> redirect or raw HTML error strings. Now: JSON in/out.
-# Note: still multipart-compatible since the original used request.form —
-# React will send a normal FormData/urlencoded POST, no file involved here.
 # ══════════════════════════════════════════════════════════════════════════
 @user_bp.route('/google_register', methods=['POST'])
 def google_register():
@@ -285,7 +273,6 @@ def google_register():
         if cursor.fetchone():
             return jsonify({'success': False, 'message': 'Username already taken! Please choose another.'}), 409
 
-        # Google-registered users have no password — NULL, same as before.
         code = generate_unique_connection_code(cursor)
         cursor.execute(
             "INSERT INTO users (username, email, password, profile_pic, connection_code) VALUES (%s, %s, NULL, %s, %s)",
@@ -349,9 +336,7 @@ def send_security_alert(to_email, username):
 
 
 # ══════════════════════════════════════════════════════════════════════════
-# GET /profile  (was: render_template('user_profile.html', user=user))
-# Now: JSON. React's ProfilePage fetches this on mount instead of receiving
-# server-rendered {{ user.* }} values.
+# GET /profile
 # ══════════════════════════════════════════════════════════════════════════
 @user_bp.route('/profile')
 def user_profile():
@@ -363,14 +348,16 @@ def user_profile():
     cursor = connection.cursor(dictionary=True)
 
     try:
-        cursor.execute("SELECT * FROM users WHERE id = %s", (user_id,))
+        cursor.execute(
+            "SELECT id, username, email, gender, position, profile_pic, "
+            "age, connection_code "
+            "FROM users WHERE id = %s",
+            (user_id,)
+        )
         user = cursor.fetchone()
 
         if not user:
             return jsonify({'success': False, 'message': 'User not found'}), 404
-
-        # Drop the password hash before it ever leaves the server
-        user.pop('password', None)
 
         return jsonify({'success': True, 'user': user})
     finally:
@@ -516,9 +503,6 @@ def update_profile():
         """
         cursor.execute(query, (new_username, new_email, new_gender, new_position, user_id))
 
-        # Handle profile picture upload — return a path, not url_for(), since
-        # there's no Jinja context to build it in anymore. React prepends the
-        # Flask origin itself (see note in backend.py).
         image_path = None
         if file and allowed_file(file.filename):
             filename = secure_filename(file.filename)
@@ -530,7 +514,7 @@ def update_profile():
             db_path = f"uploads/profile_pics/{unique_filename}"
 
             cursor.execute("UPDATE users SET profile_pic = %s WHERE id = %s", (db_path, user_id))
-            image_path = db_path  # e.g. "uploads/profile_pics/3_412_avatar.jpg"
+            image_path = db_path
 
         connection.commit()
 
@@ -550,7 +534,6 @@ def update_profile():
 
 # ══════════════════════════════════════════════════════════════════════════
 # PROJECT CREATION — ProjectCreator.jsx (new schema: projects + project_members)
-# Replaces the old /api/project_setup in backend.py (never actually used).
 # ══════════════════════════════════════════════════════════════════════════
 
 def save_project_image(file, project_id):
@@ -654,19 +637,138 @@ def create_project():
                 )
                 connection.commit()
 
-        # Owner is always a member too
-        member_ids = [owner_id] + collaborator_ids
-        for uid in member_ids:
+        # Collaborators get invited instead of force-added
+        for uid in collaborator_ids:
             cursor.execute(
-                "INSERT IGNORE INTO project_members (project_id, user_id) VALUES (%s, %s)",
-                (project_id, uid)
+                """INSERT IGNORE INTO project_invitations (project_id, inviter_id, invitee_id)
+                   VALUES (%s, %s, %s)""",
+                (project_id, owner_id, uid)
             )
+            cursor.execute("SELECT LAST_INSERT_ID()")
+            invite_id = cursor.fetchone()[0]
+
+            # INSERT IGNORE was a no-op (duplicate invite) — skip notification
+            if invite_id == 0:
+                continue
+
+            create_notification(
+                cursor,
+                uid,
+                'project_invitation',
+                "Project Invitation",
+                f"You were invited to join \"{project_name}\".",
+                invite_id
+            )
+
         connection.commit()
 
         return jsonify({'success': True, 'project_id': project_id})
     except Exception as e:
         connection.rollback()
         return jsonify({'success': False, 'message': f'Database Error: {e}'}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# GET /api/invitations — list the logged-in user's pending invitations
+# ══════════════════════════════════════════════════════════════════════════
+@user_bp.route('/invitations')
+def list_invitations():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT pi.id, pi.project_id, pi.status, pi.created_at,
+                   p.name AS project_name, p.project_image,
+                   u.username AS inviter_username, u.profile_pic AS inviter_pic
+            FROM project_invitations pi
+            JOIN projects p ON p.id = pi.project_id
+            JOIN users u ON u.id = pi.inviter_id
+            WHERE pi.invitee_id = %s
+            ORDER BY pi.created_at DESC
+        """, (session['user_id'],))
+        invitations = cursor.fetchall()
+        for inv in invitations:
+            inv['created_at'] = str(inv['created_at'])
+        return jsonify({'success': True, 'invitations': invitations})
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# POST /api/respond_invitation_v2 — accept or reject a project invitation
+# ══════════════════════════════════════════════════════════════════════════
+@user_bp.route('/respond_invitation_v2', methods=['POST'])
+def respond_invitation_v2():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id = session['user_id']
+    invitation_id = request.form.get('invitation_id', type=int)
+    response = request.form.get('response', '').strip().lower()
+
+    if not invitation_id or response not in ('accept', 'reject'):
+        return jsonify({'success': False, 'message': 'Invalid invitation_id or response'}), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            SELECT id, project_id, inviter_id, status
+            FROM project_invitations
+            WHERE id = %s AND invitee_id = %s
+        """, (invitation_id, user_id))
+        inv = cursor.fetchone()
+
+        if not inv:
+            return jsonify({'success': False, 'message': 'Invitation not found'}), 404
+
+        if inv['status'] != 'pending':
+            return jsonify({'success': False, 'message': 'Already responded to this invitation'}), 409
+
+        new_status = 'accepted' if response == 'accept' else 'rejected'
+
+        cursor.execute("""
+            UPDATE project_invitations
+            SET status = %s, responded_at = NOW()
+            WHERE id = %s
+        """, (new_status, invitation_id))
+
+        if response == 'accept':
+            cursor.execute("""
+                INSERT IGNORE INTO project_members (project_id, user_id)
+                VALUES (%s, %s)
+            """, (inv['project_id'], user_id))
+
+        cursor.execute("SELECT username FROM users WHERE id = %s", (user_id,))
+        responder = cursor.fetchone()
+        responder_name = responder['username'] if responder else "Someone"
+
+        cursor.execute("SELECT name FROM projects WHERE id = %s", (inv['project_id'],))
+        proj = cursor.fetchone()
+        proj_name = proj['name'] if proj else "your project"
+
+        verb = "accepted" if response == 'accept' else "rejected"
+        create_notification(
+            cursor,
+            inv['inviter_id'],
+            'invitation_accepted' if response == 'accept' else 'invitation_rejected',
+            f"Invitation {verb}",
+            f"{responder_name} {verb} your invitation to join \"{proj_name}\".",
+            invitation_id
+        )
+
+        connection.commit()
+        return jsonify({'success': True, 'status': new_status})
+    except Exception as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         cursor.close()
         connection.close()

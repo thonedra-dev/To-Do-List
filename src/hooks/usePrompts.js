@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { apiGet } from '../api';
+import { apiGet, apiPostJson } from '../api';
 
 /**
  * Owns the speech-bubble prompt list ("Verify Email ⚡", "Setup Profile 🛠️")
@@ -52,8 +52,9 @@ export function usePrompts() {
   // 'Setup Profile') — same matching rule as the original's
   // btn.textContent.includes(keyword).
   const dismissPrompt = useCallback((keyword) => {
-    setPrompts((prev) => prev.filter((p) => !p.includes(keyword)));
-  }, []);
+  setPrompts((prev) => prev.filter((p) => !p.includes(keyword)));
+  apiPostJson('/dismiss_prompt', { prompt_key: keyword }).catch(() => {});
+}, []);
 
   return { username, profilePic, prompts, missingFields, loading, dismissPrompt };
 }

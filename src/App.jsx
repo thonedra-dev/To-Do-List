@@ -3,6 +3,7 @@ import Dashboard from './Pages/Dashboard';
 import LoginRegister from './Pages/LoginRegister';
 import UserProfile from './Pages/UserProfile';
 import ProjectCreator from './Pages/ProjectCreator';
+import Calendar from './Pages/Calendar';
 
 export default function App() {
   return (
@@ -12,6 +13,7 @@ export default function App() {
         <Route path="/auth" element={<LoginRegister />} />
         <Route path="/profile" element={<UserProfile />} />
         <Route path="/project/new" element={<ProjectCreator />} />
+        <Route path="/calendar" element={<Calendar />} />
       </Routes>
     </BrowserRouter>
   );

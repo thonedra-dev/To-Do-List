@@ -50,6 +50,7 @@ export default function Dashboard() {
         profilePic={profilePic}
         prompts={prompts}
         onPromptClick={handlePromptClick}
+        onPromptDismiss={dismissPrompt}
       />
 
       <div className="dash-container">

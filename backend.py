@@ -5,7 +5,7 @@ import json
 import os
 from werkzeug.utils import secure_filename
 
-from db import get_db_connection, ALLOWED_EXTENSIONS
+from db import get_db_connection, ALLOWED_EXTENSIONS, create_notification
 
 app = Flask(__name__)
 app.secret_key = "your_secret_key_here"  # TODO: move to env var before shipping
@@ -96,6 +96,12 @@ def home_data():
         username = "Unknown"
         profile_pic = None
 
+    if user:
+        cursor.execute("SELECT dismissed_prompts FROM users WHERE id = %s", (user_id,))
+        d_row = cursor.fetchone()
+        dismissed = json.loads(d_row[0]) if d_row and d_row[0] else []
+        prompts = [p for p in prompts if not any(p.startswith(d) for d in dismissed)]
+
     cursor.close()
     connection.close()
 
@@ -107,6 +113,37 @@ def home_data():
         'missing_fields': missing_fields
     })
 
+# ══════════════════════════════════════════════════════════════════════════
+# POST /api/dismiss_prompt — permanently dismiss a home-page prompt bubble
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/dismiss_prompt', methods=['POST'])
+def dismiss_prompt():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json(silent=True) or {}
+    prompt_key = data.get('prompt_key')
+    if not prompt_key:
+        return jsonify({'success': False, 'message': 'prompt_key is required'}), 400
+
+    user_id = session['user_id']
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute("SELECT dismissed_prompts FROM users WHERE id = %s", (user_id,))
+        row = cursor.fetchone()
+        dismissed = json.loads(row[0]) if row and row[0] else []
+        if prompt_key not in dismissed:
+            dismissed.append(prompt_key)
+        cursor.execute(
+            "UPDATE users SET dismissed_prompts = %s WHERE id = %s",
+            (json.dumps(dismissed), user_id)
+        )
+        connection.commit()
+        return jsonify({'success': True, 'dismissed_prompts': dismissed})
+    finally:
+        cursor.close()
+        connection.close()
 
 # ══════════════════════════════════════════════════════════════════════════
 # GET /task_details_data — replaces task_details(). Was: render_template
@@ -541,83 +578,130 @@ def search_user_by_email():
         cursor.close()
         connection.close()
 
+
 # ══════════════════════════════════════════════════════════════════════════
-# GET /notifications_page_data — replaces notifications_page(). Was:
-# render_template with username/email/position/profile_pic. Now: JSON.
-# (Kept separate from /notifications, which returns the notification list
-# itself — this returns the user-header info the old page also needed.)
+# GET /api/notifications — list the logged-in user's notifications
 # ══════════════════════════════════════════════════════════════════════════
-@app.route('/api/notifications_page_data')
-def notifications_page_data():
+@app.route('/api/notifications')
+def get_notifications():
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
     connection = get_db_connection()
-    cursor = connection.cursor()
+    cursor = connection.cursor(dictionary=True)
     try:
+        cursor.execute("""
+            SELECT id, type, title, message, related_id, is_read, created_at
+            FROM notifications
+            WHERE user_id = %s
+            ORDER BY created_at DESC
+            LIMIT 100
+        """, (session['user_id'],))
+        rows = cursor.fetchall()
+        for r in rows:
+            r['created_at'] = str(r['created_at'])
+            r['is_read'] = bool(r['is_read'])
+
         cursor.execute(
-            "SELECT username, email, position, profile_pic FROM users WHERE id = %s",
+            "SELECT COUNT(*) AS n FROM notifications WHERE user_id = %s AND is_read = 0",
             (session['user_id'],)
         )
-        row = cursor.fetchone()
+        unread = cursor.fetchone()['n']
 
-        return jsonify({
-            'success': True,
-            'username': row[0] if row else '',
-            'email': row[1] if row else '',
-            'position': row[2] if row else '',
-            'profile_pic': row[3] if row else None
-        })
+        return jsonify({'success': True, 'notifications': rows, 'unread_count': unread})
     finally:
         cursor.close()
         connection.close()
 
 
-@app.route('/api/respond_invitation', methods=['POST'])
-def respond_invitation():
+# ══════════════════════════════════════════════════════════════════════════
+# POST /api/mark_notification_read/<id>
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/mark_notification_read/<int:notification_id>', methods=['POST'])
+def mark_notification_read(notification_id):
     if 'user_id' not in session:
         return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
-    user_id = session['user_id']
-    section_id = request.form.get('section_id', type=int)
-    response = request.form.get('response', '').strip().lower()
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            "UPDATE notifications SET is_read = 1 WHERE id = %s AND user_id = %s",
+            (notification_id, session['user_id'])
+        )
+        connection.commit()
+        return jsonify({'success': True})
+    finally:
+        cursor.close()
+        connection.close()
 
-    if not section_id or response not in ('accept', 'deny'):
-        return jsonify({'success': False, 'message': 'Invalid section_id or response'}), 400
 
-    new_status = 1 if response == 'accept' else 2
+# ══════════════════════════════════════════════════════════════════════════
+# POST /api/mark_all_notifications_read
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/mark_all_notifications_read', methods=['POST'])
+def mark_all_notifications_read():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
 
     connection = get_db_connection()
     cursor = connection.cursor()
-
     try:
         cursor.execute(
-            """
-            SELECT acceptance_status FROM section_assignees
-            WHERE section_id = %s AND user_id = %s
-            """,
-            (section_id, user_id)
-        )
-        row = cursor.fetchone()
-
-        if not row:
-            return jsonify({'success': False, 'message': 'Invitation not found'}), 404
-
-        if row[0] != 0:
-            return jsonify({'success': False, 'message': 'You have already responded to this invitation'}), 409
-
-        cursor.execute(
-            """
-            UPDATE section_assignees
-            SET    acceptance_status = %s
-            WHERE  section_id = %s AND user_id = %s
-            """,
-            (new_status, section_id, user_id)
+            "UPDATE notifications SET is_read = 1 WHERE user_id = %s",
+            (session['user_id'],)
         )
         connection.commit()
+        return jsonify({'success': True})
+    finally:
+        cursor.close()
+        connection.close()
 
-        label = "accepted" if new_status == 1 else "denied"
-        return jsonify({'success': True, 'message': f'Invitation {label} successfully.'})
+
+# ══════════════════════════════════════════════════════════════════════════
+# POST /api/generate_due_notifications
+#   Call this from a cron job / scheduler (once every few hours is fine).
+#   It scans tasks due within the next 24h and creates one notification per
+#   (user, task) pair — deduped so it doesn't spam on every run.
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/generate_due_notifications', methods=['POST'])
+def generate_due_notifications():
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        # Tasks due within the next 24 hours, not completed
+        cursor.execute("""
+            SELECT id, user_id, task, due_date
+            FROM tasks
+            WHERE completed = 0
+              AND due_date IS NOT NULL
+              AND due_date BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 1 DAY)
+        """)
+        due_tasks = cursor.fetchall()
+
+        created = 0
+        for t in due_tasks:
+            # Dedup: one 'task_due_soon' notification per task, ever
+            cursor.execute("""
+                SELECT id FROM notifications
+                WHERE user_id = %s AND type = 'task_due_soon' AND related_id = %s
+                LIMIT 1
+            """, (t['user_id'], t['id']))
+            if cursor.fetchone():
+                continue
+
+            create_notification(
+                cursor,
+                t['user_id'],
+                'task_due_soon',
+                "Task Due Soon",
+                f"Your task \"{t['task']}\" is due on {t['due_date']}.",
+                t['id']
+            )
+            created += 1
+
+        connection.commit()
+        return jsonify({'success': True, 'created': created})
     except Exception as e:
         connection.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500

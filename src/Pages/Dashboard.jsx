@@ -2,7 +2,7 @@ import { useState } from 'react';
 import TopNav from '../Components/TopNav';
 import { DashHero } from '../Components/ProgressRing';
 import StatsRow from '../Components/StatsRow';
-import TaskForm from '../Components/TaskForm';
+import InputForm from '../Components/InputForm';
 import TaskList from '../Components/TaskList';
 import ProgressRing from '../Components/ProgressRing';
 import CategoryBreakdown from '../Components/CategoryBreakdown';
@@ -60,7 +60,7 @@ export default function Dashboard() {
 
         <div className="dash-grid reveal">
           <div className="dash-main">
-            <TaskForm onTaskAdded={addTaskLocal} />
+            <InputForm onTaskAdded={addTaskLocal} />
             <TaskList tasks={tasks} loading={loading} error={error} onComplete={completeTask} />
           </div>
 

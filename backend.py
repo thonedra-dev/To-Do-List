@@ -3,6 +3,7 @@ from flask_cors import CORS
 from user import user_bp
 import json
 import os
+import requests
 from werkzeug.utils import secure_filename
 
 from db import get_db_connection, ALLOWED_EXTENSIONS, create_notification
@@ -449,6 +450,130 @@ def calendar_tasks():
                 t['due_date'] = t['due_date'].isoformat()
 
         return jsonify({'success': True, 'tasks': tasks})
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# Geocoding helper — turns a free-text address into (lat, lng) using
+# OpenStreetMap's Nominatim, no API key required. Called once per meeting
+# save; result is cached in the row so the map never re-geocodes on read.
+# ══════════════════════════════════════════════════════════════════════════
+def geocode_address(address):
+    if not address:
+        return None, None
+    try:
+        resp = requests.get(
+            "https://nominatim.openstreetmap.org/search",
+            params={"q": address, "format": "json", "limit": 1},
+            headers={"User-Agent": "TodoListDashboard/1.0"},
+            timeout=5
+        )
+        print("Nominatim status:", resp.status_code)   # TEMP DEBUG
+        print("Nominatim response:", resp.text[:300])   # TEMP DEBUG
+        results = resp.json()
+        if results:
+            return float(results[0]["lat"]), float(results[0]["lon"])
+    except Exception as e:
+        print("Geocode error:", e)   # TEMP DEBUG
+    return None, None
+# ══════════════════════════════════════════════════════════════════════════
+# POST /api/add_meeting — mirrors /api/add_task. Accepts FormData, geocodes
+# the address server-side if physical/hybrid, inserts meeting + agenda
+# items, returns the created meeting as JSON.
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/add_meeting', methods=['POST'])
+def add_meeting():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id = session['user_id']
+
+    title = request.form.get('title', '').strip()
+    description = request.form.get('description', '').strip()
+    location_type = request.form.get('location_type', 'physical')
+    location_text = request.form.get('location_text', '').strip() or None
+    meeting_link = request.form.get('meeting_link', '').strip() or None
+    start_time = request.form.get('start_time')
+    end_time = request.form.get('end_time') or None
+    importance = request.form.get('importance', 'Medium')
+    related = request.form.get('related', 'Other')
+    project_meeting = request.form.get('project_meeting', 'false').lower() == 'true'
+
+    if not title:
+        return jsonify({'success': False, 'message': 'Title is required'}), 400
+    if not start_time:
+        return jsonify({'success': False, 'message': 'Start time is required'}), 400
+
+    # Geocode only when there's an actual address to resolve
+    lat, lng = (None, None)
+    if location_type in ('physical', 'hybrid') and location_text:
+        lat, lng = geocode_address(location_text)
+
+    # agenda_items[] arrive as "description|duration|presenter" strings,
+    # same encoding convention as steps[] in /add_task
+    raw_items = request.form.getlist('agenda_items[]')
+
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+    try:
+        cursor.execute("""
+            INSERT INTO meetings
+                (user_id, title, description, location_type, location_text,
+                 location_lat, location_lng, meeting_link, start_time, end_time,
+                 importance, related, project_meeting)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s)
+        """, (
+            user_id, title, description, location_type, location_text,
+            lat, lng, meeting_link, start_time, end_time,
+            importance, related, project_meeting
+        ))
+        meeting_id = cursor.lastrowid
+
+        agenda_items = []
+        for idx, raw in enumerate(raw_items):
+            parts = raw.split('|')
+            desc = parts[0] if len(parts) > 0 else ''
+            duration = parts[1] if len(parts) > 1 and parts[1] else None
+            presenter = parts[2] if len(parts) > 2 and parts[2] else None
+            if not desc.strip():
+                continue
+            cursor.execute("""
+                INSERT INTO meeting_agenda_items
+                    (meeting_id, order_index, description, duration_minutes, presenter)
+                VALUES (%s, %s, %s, %s, %s)
+            """, (meeting_id, idx, desc.strip(), duration, presenter))
+            agenda_items.append({
+                'order_index': idx, 'description': desc.strip(),
+                'duration_minutes': duration, 'presenter': presenter
+            })
+
+        connection.commit()
+
+        return jsonify({
+            'success': True,
+            'meeting': {
+                'id': meeting_id,
+                'title': title,
+                'description': description,
+                'location_type': location_type,
+                'location_text': location_text,
+                'location_lat': lat,
+                'location_lng': lng,
+                'meeting_link': meeting_link,
+                'start_time': start_time,
+                'end_time': end_time,
+                'importance': importance,
+                'related': related,
+                'project_meeting': project_meeting,
+                'status': 'scheduled',
+                'agenda_items': agenda_items
+            }
+        })
+    except Exception as e:
+        connection.rollback()
+        return jsonify({'success': False, 'message': str(e)}), 500
     finally:
         cursor.close()
         connection.close()

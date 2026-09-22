@@ -416,6 +416,45 @@ def complete_step(step_id):
 
 
 # ══════════════════════════════════════════════════════════════════════════
+# GET /api/calendar_tasks — returns every task belonging to the logged-in
+# user that HAS a due_date set, for plotting on the Calendar page.
+# Steps are intentionally NOT included here (keeps this endpoint light —
+# the frontend fetches steps for one task at a time, on click, via the
+# existing /api/setup_step_data/<fid>).
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/calendar_tasks')
+def calendar_tasks():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id = session['user_id']
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    try:
+        cursor.execute(
+            """SELECT id, task, description, completed, due_date, importance, related
+               FROM tasks
+               WHERE user_id = %s AND due_date IS NOT NULL
+               ORDER BY due_date ASC""",
+            (user_id,)
+        )
+        tasks = cursor.fetchall()
+
+        # due_date comes back as a datetime.date from the driver — make it
+        # JSON-safe and predictable for the frontend (YYYY-MM-DD, matches
+        # what <input type="date"> / the calendar grid keys expect).
+        for t in tasks:
+            if t.get('due_date') is not None:
+                t['due_date'] = t['due_date'].isoformat()
+
+        return jsonify({'success': True, 'tasks': tasks})
+    finally:
+        cursor.close()
+        connection.close()
+
+
+# ══════════════════════════════════════════════════════════════════════════
 # GET /feedback/<task_id> — was: render_template, and returned a raw HTML
 # error string ("Error: ...", 400) on failure. Now: JSON both paths.
 # ══════════════════════════════════════════════════════════════════════════

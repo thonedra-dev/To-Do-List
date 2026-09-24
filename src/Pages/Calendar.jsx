@@ -1,7 +1,12 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import useCalendarTasks from '../hooks/useCalendarTasks';
+import useCalendarMeetings from '../hooks/useCalendarMeetings';
 import useTaskSteps from '../hooks/useTaskSteps';
+import MeetingMap from '../Components/MeetingMap';
+import GirlPointer from '../Components/GirlPointer';
+import CalendarHeader from '../Components/CalendarHeader';
 import '../Calendar.css';
+import '../CalendarPanel.css';
 
 const MONTH_NAMES = [
   'January', 'February', 'March', 'April', 'May', 'June',
@@ -11,13 +16,13 @@ const WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
 const IMPORTANCE_LABEL = { Low: 'Low', Medium: 'Medium', High: 'High' };
 
-// The three task "kinds" shown as the legend / filter dots on the right.
-// Only 'personal' is wired to real backend data right now — project and
-// meeting are static/future, exactly as requested.
+// Three "kinds" plotted on the grid and switchable via the secondary tabs.
+// Dot color is keyed by KIND now (task/meeting/project), not by category —
+// this is what keeps the grid, legend, switcher and badges all consistent.
 const TASK_KINDS = [
   { key: 'personal', label: 'Personal tasks', dotClass: 'kind-dot-personal', live: true },
   { key: 'project', label: 'Project tasks', dotClass: 'kind-dot-project', live: false },
-  { key: 'meeting', label: 'Meetings', dotClass: 'kind-dot-meeting', live: false },
+  { key: 'meeting', label: 'Meetings', dotClass: 'kind-dot-meeting', live: true },
 ];
 
 function toDateKey(year, month, day) {
@@ -36,6 +41,12 @@ function formatDateLong(dateKey) {
   const [y, m, d] = dateKey.split('-').map(Number);
   const date = new Date(y, m - 1, d);
   return date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' });
+}
+
+function formatTimeOnly(raw) {
+  if (!raw) return null;
+  const d = new Date(raw.replace(' ', 'T'));
+  return d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
 }
 
 /**
@@ -70,6 +81,14 @@ export default function Calendar() {
   const [viewMonth, setViewMonth] = useState(now.getMonth());
   const [stepsCollapsed, setStepsCollapsed] = useState(false);
 
+  // Secondary tab under the date title: which kind's list is showing.
+  const [activeTab, setActiveTab] = useState('personal'); // 'personal' | 'project' | 'meeting'
+
+  // When set, the right panel shows ONLY this one item (task or meeting)
+  // instead of the day's full list — the "focused" detail mode.
+  const [focusedTaskId, setFocusedTaskId] = useState(null);
+  const [focusedMeetingId, setFocusedMeetingId] = useState(null);
+
   const {
     tasksByDate,
     loading,
@@ -82,10 +101,29 @@ export default function Calendar() {
     selectTask,
   } = useCalendarTasks();
 
-  const { steps, loading: stepsLoading, error: stepsError } = useTaskSteps(selectedTaskId);
+  const {
+    meetingsByDate,
+    loading: meetingsLoading,
+    error: meetingsError,
+    selectedMeeting,
+    selectMeeting,
+  } = useCalendarMeetings();
+
+  const { steps, loading: stepsLoading, error: stepsError } = useTaskSteps(focusedTaskId);
 
   const cells = useMemo(() => buildMonthGrid(viewYear, viewMonth), [viewYear, viewMonth]);
   const today = todayKey();
+
+  const selectedDayMeetings = selectedDate ? (meetingsByDate[selectedDate] || []) : [];
+
+  // Reset tab + any focused item whenever the selected day changes, so you
+  // never land on "Meetings" tab for a day that has none, or stay focused
+  // on a task from a previously-selected day.
+  useEffect(() => {
+    setActiveTab('personal');
+    setFocusedTaskId(null);
+    setFocusedMeetingId(null);
+  }, [selectedDate]);
 
   function goPrevMonth() {
     if (viewMonth === 0) {
@@ -111,16 +149,36 @@ export default function Calendar() {
     selectDate(today);
   }
 
-  function handleSelectTask(taskId) {
+  function handleFocusTask(taskId) {
     setStepsCollapsed(false);
     selectTask(taskId);
+    setFocusedTaskId(taskId);
   }
+
+  function handleFocusMeeting(meetingId) {
+    selectMeeting(meetingId);
+    setFocusedMeetingId(meetingId);
+  }
+
+  function backToList() {
+    setFocusedTaskId(null);
+    setFocusedMeetingId(null);
+  }
+
+  const dayHasAnyOfKind = {
+    personal: selectedDayTasks.length > 0,
+    project: false, // static/future, per TASK_KINDS
+    meeting: selectedDayMeetings.length > 0,
+  };
 
   return (
     <div className="cal-page">
       <div className="cal-page-veil" />
 
-      <div className="cal-layout">
+      <div className="cal-shell">
+        <CalendarHeader />
+
+        <div className="cal-layout">
         {/* ---------------- LEFT: calendar grid (self-scrolling) ---------------- */}
         <section className="cal-main">
           <header className="cal-toolbar">
@@ -151,10 +209,10 @@ export default function Calendar() {
           </div>
 
           <div className="cal-grid-scroll">
-            {loading ? (
-              <div className="cal-grid-status">Loading tasks…</div>
-            ) : error ? (
-              <div className="cal-grid-status cal-grid-status-error">{error}</div>
+            {(loading || meetingsLoading) ? (
+              <div className="cal-grid-status">Loading…</div>
+            ) : (error || meetingsError) ? (
+              <div className="cal-grid-status cal-grid-status-error">{error || meetingsError}</div>
             ) : (
               <div className="cal-grid">
                 {cells.map((cell, i) => {
@@ -163,7 +221,8 @@ export default function Calendar() {
                   }
 
                   const dayTasks = tasksByDate[cell.dateKey] || [];
-                  const hasTasks = dayTasks.length > 0;
+                  const dayMeetings = meetingsByDate[cell.dateKey] || [];
+                  const hasItems = dayTasks.length > 0 || dayMeetings.length > 0;
                   const isToday = cell.dateKey === today;
                   const isSelected = cell.dateKey === selectedDate;
 
@@ -173,7 +232,7 @@ export default function Calendar() {
                       key={i}
                       className={[
                         'cal-cell',
-                        hasTasks ? 'cal-cell-has-tasks' : '',
+                        hasItems ? 'cal-cell-has-tasks' : '',
                         isToday ? 'cal-cell-today' : '',
                         isSelected ? 'cal-cell-selected' : '',
                       ].filter(Boolean).join(' ')}
@@ -181,14 +240,13 @@ export default function Calendar() {
                     >
                       <span className="cal-cell-day">{cell.day}</span>
 
-                      {hasTasks && (
+                      {hasItems && (
                         <div className="cal-cell-dots">
                           {dayTasks.slice(0, 6).map((t) => (
-                            <span
-                              key={t.id}
-                              className={`cal-task-dot cal-cat-${(t.related || 'other').toLowerCase()}`}
-                              title={t.task}
-                            />
+                            <span key={`t-${t.id}`} className="cal-task-dot kind-dot-personal" title={t.task} />
+                          ))}
+                          {dayMeetings.slice(0, 6 - dayTasks.length).map((m) => (
+                            <span key={`m-${m.id}`} className="cal-task-dot kind-dot-meeting" title={m.title} />
                           ))}
                         </div>
                       )}
@@ -200,63 +258,106 @@ export default function Calendar() {
           </div>
         </section>
 
-        {/* ---------------- RIGHT: legend (idle state) OR detail readout ---------------- */}
+        {/* ---------------- RIGHT: legend (idle) OR list/focused readout ---------------- */}
         <aside className="cal-panel">
           {!selectedDate ? (
-            <div className="cal-panel-empty cal-panel-empty-idle">
-              <div className="cal-kind-legend">
-                {TASK_KINDS.map((k) => (
-                  <div key={k.key} className={`cal-kind-item${k.live ? '' : ' static'}`} title={k.live ? k.label : `${k.label} — coming soon`}>
-                    <span className={`cal-kind-dot ${k.dotClass}`} />
-                    <span className="cal-kind-label">{k.label}</span>
-                    {!k.live && <span className="cal-kind-soon">soon</span>}
-                  </div>
-                ))}
-              </div>
-
-              <svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
-                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect>
-                <line x1="16" y1="2" x2="16" y2="6"></line>
-                <line x1="8" y1="2" x2="8" y2="6"></line>
-                <line x1="3" y1="10" x2="21" y2="10"></line>
-              </svg>
-              <p>Pick a day on the calendar to see what's due.</p>
+            <div className="cal-panel-idle">
+              <GirlPointer kinds={TASK_KINDS} />
             </div>
           ) : (
             <div className="cal-panel-scroll">
               <header className="cal-panel-date-header">
-                <span className="cal-panel-date-label">{formatDateLong(selectedDate)}</span>
-                <span className="cal-panel-count">
-                  {selectedDayTasks.length} {selectedDayTasks.length === 1 ? 'task' : 'tasks'}
-                </span>
+                {(focusedTaskId || focusedMeetingId) ? (
+                  <button type="button" className="cal-back-btn" onClick={backToList} title="Back to list">
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round">
+                      <polyline points="15 18 9 12 15 6"></polyline>
+                    </svg>
+                    <span>Back</span>
+                  </button>
+                ) : (
+                  <>
+                    <span className="cal-panel-date-label">{formatDateLong(selectedDate)}</span>
+                    <span className="cal-panel-count">
+                      {selectedDayTasks.length + selectedDayMeetings.length} item{selectedDayTasks.length + selectedDayMeetings.length === 1 ? '' : 's'}
+                    </span>
+                  </>
+                )}
               </header>
 
-              {selectedDayTasks.length === 0 && (
-                <div className="cal-panel-empty cal-panel-empty-inline">
-                  <p>Nothing due on this day.</p>
-                </div>
-              )}
-
-              {selectedDayTasks.length > 1 && (
-                <div className="cal-panel-task-switcher">
-                  {selectedDayTasks.map((t) => (
+              {/* Secondary tabs — hidden once focused on a single item */}
+              {!(focusedTaskId || focusedMeetingId) && (
+                <div className="cal-kind-tabs">
+                  {TASK_KINDS.map((k) => (
                     <button
                       type="button"
-                      key={t.id}
-                      className={`cal-switcher-chip cal-cat-${(t.related || 'other').toLowerCase()}${t.id === selectedTaskId ? ' active' : ''}`}
-                      onClick={() => handleSelectTask(t.id)}
+                      key={k.key}
+                      className={`cal-kind-tab${activeTab === k.key ? ' active' : ''}${!k.live ? ' disabled' : ''}`}
+                      onClick={() => k.live && setActiveTab(k.key)}
+                      disabled={!k.live}
+                      title={k.live ? k.label : `${k.label} — coming soon`}
                     >
-                      <span className="cal-switcher-dot" />
-                      <span className="cal-switcher-text">{t.task}</span>
+                      <span className={`cal-kind-dot ${k.dotClass}`} />
+                      {k.label}
+                      {dayHasAnyOfKind[k.key] && <span className="cal-kind-tab-count">
+                        {k.key === 'personal' ? selectedDayTasks.length : k.key === 'meeting' ? selectedDayMeetings.length : 0}
+                      </span>}
                     </button>
                   ))}
                 </div>
               )}
 
-              {selectedTask && (
+              {/* ---- LIST MODE: personal tasks tab ---- */}
+              {!focusedTaskId && !focusedMeetingId && activeTab === 'personal' && (
+                selectedDayTasks.length === 0 ? (
+                  <div className="cal-panel-empty cal-panel-empty-inline"><p>No tasks due on this day.</p></div>
+                ) : (
+                  <div className="cal-panel-task-switcher">
+                    {selectedDayTasks.map((t) => (
+                      <button
+                        type="button"
+                        key={t.id}
+                        className="cal-switcher-chip kind-chip-personal"
+                        onClick={() => handleFocusTask(t.id)}
+                      >
+                        <span className="cal-switcher-dot" />
+                        <span className="cal-switcher-text">{t.task}</span>
+                      </button>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {/* ---- LIST MODE: meetings tab ---- */}
+              {!focusedTaskId && !focusedMeetingId && activeTab === 'meeting' && (
+                selectedDayMeetings.length === 0 ? (
+                  <div className="cal-panel-empty cal-panel-empty-inline"><p>No meetings on this day.</p></div>
+                ) : (
+                  <div className="cal-panel-task-switcher">
+                    {selectedDayMeetings.map((m) => (
+                      <button
+                        type="button"
+                        key={m.id}
+                        className="cal-switcher-chip kind-chip-meeting"
+                        onClick={() => handleFocusMeeting(m.id)}
+                      >
+                        <span className="cal-switcher-dot" />
+                        <span className="cal-switcher-text">{m.title}</span>
+                      </button>
+                    ))}
+                  </div>
+                )
+              )}
+
+              {/* ---- LIST MODE: project tab (static/empty for now) ---- */}
+              {!focusedTaskId && !focusedMeetingId && activeTab === 'project' && (
+                <div className="cal-panel-empty cal-panel-empty-inline"><p>Project tasks are coming soon.</p></div>
+              )}
+
+              {/* ---- FOCUSED MODE: single task detail ---- */}
+              {focusedTaskId && selectedTask && (
                 <div className="cal-task-detail">
                   <div className="cal-task-detail-top">
-                    <span className={`cal-cat-badge cal-cat-${(selectedTask.related || 'other').toLowerCase()}`}>
+                    <span className="cal-cat-badge kind-chip-personal">
                       {selectedTask.related || 'Other'}
                     </span>
                     <span className={`cal-importance-badge cal-importance-${(selectedTask.importance || 'medium').toLowerCase()}`}>
@@ -321,9 +422,106 @@ export default function Calendar() {
                   </div>
                 </div>
               )}
+
+              {/* ---- FOCUSED MODE: single meeting detail ---- */}
+              {focusedMeetingId && selectedMeeting && (
+                <MeetingDetail meeting={selectedMeeting} />
+              )}
             </div>
           )}
         </aside>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Focused detail view for one meeting — sibling to the task detail block
+ * above but with meeting-shaped fields (time range, location/link, agenda,
+ * and an embedded map when geocoding succeeded).
+ */
+function MeetingDetail({ meeting }) {
+  const [agendaCollapsed, setAgendaCollapsed] = useState(false);
+  const agendaItems = meeting.agenda_items || [];
+  const hasMapPin = meeting.location_lat != null && meeting.location_lng != null;
+
+  const startLabel = formatTimeOnly(meeting.start_time);
+  const endLabel = meeting.end_time ? formatTimeOnly(meeting.end_time) : null;
+
+  return (
+    <div className="cal-task-detail">
+      <div className="cal-task-detail-top">
+        <span className="cal-cat-badge kind-chip-meeting">{meeting.related || 'Other'}</span>
+        <span className={`cal-importance-badge cal-importance-${(meeting.importance || 'medium').toLowerCase()}`}>
+          {IMPORTANCE_LABEL[meeting.importance] || meeting.importance}
+        </span>
+        {meeting.status === 'cancelled' && <span className="cal-importance-badge cal-importance-high">Cancelled</span>}
+      </div>
+
+      <h2 className="cal-task-title">{meeting.title}</h2>
+
+      {meeting.description && <p className="cal-task-description">{meeting.description}</p>}
+
+      <div className="cal-task-meta-row">
+        <span className={`cal-status-dot ${meeting.status === 'completed' ? 'done' : 'pending'}`}></span>
+        <span className="cal-task-meta-text">
+          {startLabel}{endLabel ? ` – ${endLabel}` : ''}
+        </span>
+      </div>
+
+      {(meeting.location_text || meeting.meeting_link) && (
+        <p className="cal-task-description" style={{ marginTop: 4 }}>
+          {meeting.location_text && <span>📍 {meeting.location_text}</span>}
+          {meeting.meeting_link && (
+            <>
+              {meeting.location_text ? ' · ' : ''}
+              <a href={meeting.meeting_link} target="_blank" rel="noreferrer">Join meeting →</a>
+            </>
+          )}
+        </p>
+      )}
+
+      {/* Map is fetched responsively whenever coordinates resolved — no
+          extra toggle needed here since focused mode already has room. */}
+      {hasMapPin && (
+        <MeetingMap lat={meeting.location_lat} lng={meeting.location_lng} label={meeting.location_text} />
+      )}
+
+      <div className="cal-steps-section">
+        <button
+          type="button"
+          className="cal-steps-heading-row"
+          onClick={() => setAgendaCollapsed((c) => !c)}
+        >
+          <h3 className="cal-steps-heading">Agenda {agendaItems.length > 0 && `(${agendaItems.length})`}</h3>
+          <svg
+            className={`cal-steps-chevron${agendaCollapsed ? ' collapsed' : ''}`}
+            width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" strokeLinejoin="round"
+          >
+            <polyline points="6 9 12 15 18 9"></polyline>
+          </svg>
+        </button>
+
+        {!agendaCollapsed && (
+          agendaItems.length === 0 ? (
+            <div className="cal-steps-status">No agenda items added.</div>
+          ) : (
+            <ul className="cal-steps-list">
+              {agendaItems.map((item) => (
+                <li key={item.id} className="cal-step-item">
+                  <span className="cal-step-status-dot"></span>
+                  <div className="cal-step-body">
+                    <span className="cal-step-desc">
+                      {item.description}{item.presenter ? ` — ${item.presenter}` : ''}
+                    </span>
+                    <span className="cal-step-difficulty">{item.duration_minutes ? `${item.duration_minutes}m` : ''}</span>
+                  </div>
+                </li>
+              ))}
+            </ul>
+          )
+        )}
       </div>
     </div>
   );

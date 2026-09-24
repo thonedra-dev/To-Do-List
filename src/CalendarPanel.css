@@ -1,0 +1,211 @@
+/* ============================================================
+   CalendarPanel.css
+   Right-hand panel IDLE state only — shown before any day is
+   selected. Two pieces sit inside the same relatively-positioned
+   idle container: a wall-mounted "blackboard" carrying the three
+   kind-legend rows, and the 2D girl cutout (african_girl.png)
+   positioned so her raised hand points up toward the board's
+   near corner. Split out of Calendar.css to keep that file
+   focused on the grid/detail views.
+   ============================================================ */
+
+.cal-panel-idle {
+    position: relative;
+    flex: 1;
+    min-height: 420px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+/* ------------------------------------------------------------
+   Blackboard — pinned top-right. A dark slate surface with a
+   routed wooden frame and a chalk tray, holding the three
+   legend rows in place of loose floating text.
+   ------------------------------------------------------------ */
+
+.cal-chalkboard {
+    position: absolute;
+    top: 24px;
+    right: 6px;
+    /* Smaller and pushed flush to the panel's right edge, so it reads as
+       pinned in the corner rather than floating mid-panel — this keeps
+       the space directly above/left of her raised hand clear. */
+    width: min(38%, 190px);
+    z-index: 2;
+}
+
+.cal-chalkboard-frame {
+    position: relative;
+    background:
+        radial-gradient(140% 180% at 12% 0%, rgba(255, 255, 255, 0.05), transparent 55%),
+        linear-gradient(155deg, #223129, #16211c 60%, #121b16);
+    border-radius: 9px;
+    padding: 12px 13px 15px;
+    box-shadow:
+        0 1px 0 rgba(255, 255, 255, 0.06) inset,
+        0 14px 28px rgba(0, 0, 0, 0.32),
+        0 2px 6px rgba(0, 0, 0, 0.24);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+/* Routed wooden edge — a slim inset border a few px in from the
+   frame edge, like the trim around a mounted classroom board. */
+.cal-chalkboard-frame::before {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 6px;
+    border: 1px solid rgba(198, 154, 102, 0.16);
+    pointer-events: none;
+}
+
+/* Faint chalk-dust texture so the surface doesn't read as flat
+   tinted plastic. Kept very subtle — texture, not decoration. */
+.cal-chalkboard-frame::after {
+    content: '';
+    position: absolute;
+    inset: 6px;
+    border-radius: 6px;
+    background-image:
+        radial-gradient(rgba(255, 255, 255, 0.05) 1px, transparent 1px),
+        radial-gradient(rgba(255, 255, 255, 0.035) 1px, transparent 1px);
+    background-size: 34px 34px, 22px 22px;
+    background-position: 0 0, 11px 14px;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+/* Chalk tray — a thin ledge along the bottom edge of the frame */
+.cal-chalkboard-tray {
+    position: absolute;
+    left: 10px;
+    right: 10px;
+    bottom: 6px;
+    height: 5px;
+    border-radius: 3px;
+    background: linear-gradient(180deg, #c69a66, #a97f4f);
+    box-shadow: 0 2px 3px rgba(0, 0, 0, 0.35);
+}
+
+.cal-chalkboard-list {
+    position: relative;
+    z-index: 1;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 9px;
+}
+
+.cal-chalkboard-item {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 8px;
+    /* Row-reverse so the dot sits nearest the board's right edge and the
+       label reads right-to-left toward it — keeps the whole board's
+       visual weight pulled to the right, away from her raised hand. */
+    flex-direction: row-reverse;
+    text-align: right;
+}
+
+.cal-chalkboard-item.static {
+    opacity: 0.5;
+}
+
+.cal-chalkboard-label {
+    font-family: var(--font-body);
+    font-size: 12.5px;
+    font-weight: 600;
+    color: #f3f6f2;
+    letter-spacing: 0.005em;
+    text-shadow: 0 1px 2px rgba(0, 0, 0, 0.3);
+    text-align: right;
+}
+
+/* Reuse the existing colored/pulsing dot look from Calendar.css
+   (.cal-kind-dot + kind-dot-*), just given a touch more glow so
+   the dots read clearly against the dark board surface. */
+.cal-chalkboard-item .cal-kind-dot {
+    box-shadow: 0 0 10px color-mix(in srgb, var(--chip-color) 80%, transparent);
+}
+
+/* ------------------------------------------------------------
+   Girl cutout — anchored bottom-left, sized off her natural
+   2:3 aspect ratio so nothing stretches. Positioned so the
+   raised arm in the artwork lands just under the board's
+   bottom-left corner, reading as "pointing up at it."
+   ------------------------------------------------------------ */
+
+.cal-idle-girl {
+    position: absolute;
+    left: 0;
+    bottom: 0;
+    height: 92%;
+    aspect-ratio: 1024 / 1536;
+    pointer-events: none;
+    z-index: 1;
+    /* Slight tilt so the raised arm angles up toward the board's
+       bottom-left corner instead of reading as level. With the wider
+       (40%) panel the board sits further right, so the girl gets more
+       headroom and a touch more tilt to close that gap visually. */
+    transform: rotate(-11deg);
+    transform-origin: 78% 24%;
+}
+
+.cal-idle-girl-img {
+    display: block;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: bottom;
+    filter: drop-shadow(0 18px 20px rgba(0, 0, 0, 0.28));
+    user-select: none;
+    -webkit-user-drag: none;
+}
+
+@media (max-width: 980px) {
+    .cal-chalkboard {
+        top: 14px;
+        right: 6px;
+        width: min(42%, 180px);
+    }
+    .cal-idle-girl {
+        height: 88%;
+    }
+}
+
+@media (max-width: 900px) {
+    .cal-panel-idle {
+        min-height: 340px;
+    }
+    .cal-chalkboard {
+        top: 4px;
+        right: 4px;
+        width: min(46%, 170px);
+    }
+    .cal-chalkboard-frame {
+        padding: 10px 11px 13px;
+    }
+    .cal-chalkboard-label {
+        font-size: 11.5px;
+    }
+    .cal-idle-girl {
+        height: 80%;
+        left: 0;
+    }
+}
+
+@media (max-width: 620px) {
+    .cal-idle-girl {
+        left: 50%;
+        transform: translateX(-62%);
+        height: 74%;
+    }
+    .cal-chalkboard {
+        width: min(62%, 220px);
+    }
+}

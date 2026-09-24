@@ -21,7 +21,7 @@ app.config.update(
     SESSION_COOKIE_SECURE=False,     # set True once you're on HTTPS in production
 )
 
-app.register_blueprint(user_bp)
+app.register_blueprint(user_bp, url_prefix='/api')
 
 
 # ══════════════════════════════════════════════════════════════════════════
@@ -454,6 +454,48 @@ def calendar_tasks():
         cursor.close()
         connection.close()
 
+@app.route('/api/calendar_meetings')
+def calendar_meetings():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+ 
+    user_id = session['user_id']
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+ 
+    try:
+        cursor.execute(
+            """SELECT id, title, description, location_type, location_text,
+                      location_lat, location_lng, meeting_link, start_time,
+                      end_time, importance, related, status, project_meeting
+               FROM meetings
+               WHERE user_id = %s
+               ORDER BY start_time ASC""",
+            (user_id,)
+        )
+        meetings = cursor.fetchall()
+ 
+        # start_time / end_time come back as datetime from the driver —
+        # stringify for JSON, and derive a plain YYYY-MM-DD date_key so the
+        # frontend can bucket meetings the same way it buckets tasks
+        # (by due_date), keyed off the meeting's start date.
+        for m in meetings:
+            start = m.get('start_time')
+            if start is not None:
+                m['date_key'] = start.date().isoformat() if hasattr(start, 'date') else str(start)[:10]
+                m['start_time'] = str(start)
+            else:
+                m['date_key'] = None
+            if m.get('end_time') is not None:
+                m['end_time'] = str(m['end_time'])
+            m['project_meeting'] = bool(m['project_meeting'])
+ 
+        return jsonify({'success': True, 'meetings': meetings})
+    finally:
+        cursor.close()
+        connection.close()
+ 
+
 
 # ══════════════════════════════════════════════════════════════════════════
 # Geocoding helper — turns a free-text address into (lat, lng) using
@@ -574,6 +616,73 @@ def add_meeting():
     except Exception as e:
         connection.rollback()
         return jsonify({'success': False, 'message': str(e)}), 500
+    finally:
+        cursor.close()
+        connection.close()
+
+# ══════════════════════════════════════════════════════════════════════════
+# GET /api/meetings_data — mirrors dashboard_data's task fetch, but for
+# meetings + their agenda items.
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/meetings_data')
+def meetings_data():
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    user_id = session['user_id']
+    connection = get_db_connection()
+    cursor = connection.cursor(dictionary=True)
+
+    cursor.execute("""
+        SELECT id, title, description, location_type, location_text,
+               location_lat, location_lng, meeting_link, start_time, end_time,
+               importance, related, status, project_meeting, created_at
+        FROM meetings WHERE user_id = %s
+        ORDER BY start_time ASC
+    """, (user_id,))
+    meetings = cursor.fetchall()
+
+    for m in meetings:
+        cursor.execute("""
+            SELECT id, order_index, description, duration_minutes, presenter
+            FROM meeting_agenda_items WHERE meeting_id = %s
+            ORDER BY order_index ASC
+        """, (m['id'],))
+        m['agenda_items'] = cursor.fetchall()
+        m['created_at'] = str(m['created_at'])
+        m['start_time'] = str(m['start_time'])
+        if m['end_time']:
+            m['end_time'] = str(m['end_time'])
+        m['project_meeting'] = bool(m['project_meeting'])
+
+    cursor.close()
+    connection.close()
+
+    return jsonify({'success': True, 'meetings': meetings})
+
+
+# ══════════════════════════════════════════════════════════════════════════
+# POST /api/meetings/<id>/status — mark a meeting completed or cancelled
+# ══════════════════════════════════════════════════════════════════════════
+@app.route('/api/meetings/<int:meeting_id>/status', methods=['POST'])
+def update_meeting_status(meeting_id):
+    if 'user_id' not in session:
+        return jsonify({'success': False, 'message': 'Unauthorized'}), 401
+
+    data = request.get_json(silent=True) or {}
+    new_status = data.get('status')
+    if new_status not in ('scheduled', 'completed', 'cancelled'):
+        return jsonify({'success': False, 'message': 'Invalid status'}), 400
+
+    connection = get_db_connection()
+    cursor = connection.cursor()
+    try:
+        cursor.execute(
+            "UPDATE meetings SET status = %s WHERE id = %s AND user_id = %s",
+            (new_status, meeting_id, session['user_id'])
+        )
+        connection.commit()
+        return jsonify({'success': True, 'status': new_status})
     finally:
         cursor.close()
         connection.close()

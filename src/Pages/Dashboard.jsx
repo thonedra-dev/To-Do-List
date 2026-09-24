@@ -3,13 +3,14 @@ import TopNav from '../Components/TopNav';
 import { DashHero } from '../Components/ProgressRing';
 import StatsRow from '../Components/StatsRow';
 import InputForm from '../Components/InputForm';
-import TaskList from '../Components/TaskList';
+import ActivityList from '../Components/ActivityList';
 import ProgressRing from '../Components/ProgressRing';
 import CategoryBreakdown from '../Components/CategoryBreakdown';
 import EmailVerifyPopup from '../Components/EmailVerifyPopup';
 import ProfileSetupPopup from '../Components/ProfileSetupPopup';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { usePrompts } from '../hooks/usePrompts';
+import { useMeetingsData } from '../hooks/useMeetingsData';
 import '../dashboard.css';
 
 /**
@@ -28,6 +29,8 @@ export default function Dashboard() {
 
   const [emailPopupOpen, setEmailPopupOpen] = useState(false);
   const [profilePopupOpen, setProfilePopupOpen] = useState(false);
+  const { meetings, loading: meetingsLoading, error: meetingsError, updateMeetingStatus } = useMeetingsData();
+  
 
   function handlePromptClick(promptText) {
     if (promptText.includes('Verify Email')) {
@@ -61,7 +64,11 @@ export default function Dashboard() {
         <div className="dash-grid reveal">
           <div className="dash-main">
             <InputForm onTaskAdded={addTaskLocal} />
-            <TaskList tasks={tasks} loading={loading} error={error} onComplete={completeTask} />
+            <ActivityList
+              tasks={tasks} loading={loading} error={error} onComplete={completeTask}
+              meetings={meetings} meetingsLoading={meetingsLoading} meetingsError={meetingsError}
+              onMeetingStatusChange={updateMeetingStatus}
+            />
           </div>
 
           <div className="dash-side">

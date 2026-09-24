@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { apiPostForm } from '../api';
 import DatePicker from './DatePicker';
+import TimePicker from './TimePicker';
 
 const EMPTY_STEP_DRAFT = { desc: '', difficulty: 'Easy' };
 const EMPTY_AGENDA_DRAFT = { desc: '', duration: '', presenter: '' };
@@ -15,12 +16,9 @@ function combineDateTime(dateIso, time) {
  * A reload icon next to the heading toggles `mode` between 'task' and
  * 'meeting', swapping both the title and the field set below it.
  *
- * Task mode: unchanged behavior from the original TaskForm, posts to
- * /add_task, calls onTaskAdded(task).
- *
- * Meeting mode: posts to /add_meeting, calls onMeetingAdded(meeting) if
- * provided (optional — a meetings list isn't wired up on the dashboard
- * yet, so this is safe to omit for now).
+ * Meetings use a single start DATE plus two TIME pickers (start/end) —
+ * both share that one date, matching the "same-day meeting" assumption
+ * agreed for v1.
  */
 export default function InputForm({ onTaskAdded, onMeetingAdded }) {
   const [mode, setMode] = useState('task'); // 'task' | 'meeting'
@@ -43,10 +41,9 @@ export default function InputForm({ onTaskAdded, onMeetingAdded }) {
   const [locationType, setLocationType] = useState('physical'); // physical | virtual | hybrid
   const [locationText, setLocationText] = useState('');
   const [meetingLink, setMeetingLink] = useState('');
-  const [startDate, setStartDate] = useState(null);
-  const [startTime, setStartTime] = useState('');
-  const [endDate, setEndDate] = useState(null);
-  const [endTime, setEndTime] = useState('');
+  const [meetingDate, setMeetingDate] = useState(null); // single shared date
+  const [startTime, setStartTime] = useState(null);
+  const [endTime, setEndTime] = useState(null); // optional
   const [projectMeeting, setProjectMeeting] = useState(false);
   const [agendaDraft, setAgendaDraft] = useState(EMPTY_AGENDA_DRAFT);
   const [pendingAgendaItems, setPendingAgendaItems] = useState([]);
@@ -93,10 +90,9 @@ export default function InputForm({ onTaskAdded, onMeetingAdded }) {
     setLocationType('physical');
     setLocationText('');
     setMeetingLink('');
-    setStartDate(null);
-    setStartTime('');
-    setEndDate(null);
-    setEndTime('');
+    setMeetingDate(null);
+    setStartTime(null);
+    setEndTime(null);
     setProjectMeeting(false);
     setPendingAgendaItems([]);
     setAgendaDraft(EMPTY_AGENDA_DRAFT);
@@ -128,8 +124,8 @@ export default function InputForm({ onTaskAdded, onMeetingAdded }) {
   }
 
   async function handleMeetingSubmit() {
-    if (!startDate || !startTime) {
-      setFormMsg('Start date and time are required.');
+    if (!meetingDate || !startTime) {
+      setFormMsg('Meeting date and start time are required.');
       return;
     }
 
@@ -139,8 +135,8 @@ export default function InputForm({ onTaskAdded, onMeetingAdded }) {
     formData.append('location_type', locationType);
     if (showLocationText) formData.append('location_text', locationText);
     if (showMeetingLink) formData.append('meeting_link', meetingLink);
-    formData.append('start_time', combineDateTime(startDate, startTime));
-    const endCombined = combineDateTime(endDate, endTime);
+    formData.append('start_time', combineDateTime(meetingDate, startTime));
+    const endCombined = endTime ? combineDateTime(meetingDate, endTime) : null;
     if (endCombined) formData.append('end_time', endCombined);
     formData.append('importance', importance);
     formData.append('related', related);
@@ -189,20 +185,21 @@ export default function InputForm({ onTaskAdded, onMeetingAdded }) {
   return (
     <section className="panel">
       <div className="panel-head">
-        <h2>{mode === 'task' ? 'Add New Task' : 'Add New Meeting'}</h2>
-        <button
-          type="button"
-          className="nav-icon-btn"
-          title={mode === 'task' ? 'Switch to Meeting' : 'Switch to Task'}
-          onClick={toggleMode}
-          style={{ marginLeft: 8 }}
-        >
-          <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-            <polyline points="23 4 23 10 17 10"></polyline>
-            <polyline points="1 20 1 14 7 14"></polyline>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
-          </svg>
-        </button>
+        <h2>
+          {mode === 'task' ? 'Add New Task' : 'Add New Meeting'}
+          <button
+            type="button"
+            className="nav-icon-btn mode-toggle-btn"
+            title={mode === 'task' ? 'Switch to Meeting' : 'Switch to Task'}
+            onClick={toggleMode}
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <polyline points="23 4 23 10 17 10"></polyline>
+              <polyline points="1 20 1 14 7 14"></polyline>
+              <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"></path>
+            </svg>
+          </button>
+        </h2>
         <span className="panel-hint">
           {mode === 'task' ? 'What needs to be done?' : 'What are we meeting about?'}
         </span>
@@ -330,14 +327,25 @@ export default function InputForm({ onTaskAdded, onMeetingAdded }) {
             </div>
 
             {showLocationText && (
-              <input
-                className="field-input"
-                type="text"
-                placeholder="Address (e.g. 12 Jalan Merdeka, Alor Setar)"
-                value={locationText}
-                onChange={(e) => setLocationText(e.target.value)}
-                style={{ marginTop: 10 }}
-              />
+              <div style={{ marginTop: 10 }}>
+                <div className="field-label-row">
+                  <span className="panel-hint" style={{ textTransform: 'none', letterSpacing: 0 }}>Address</span>
+                  <span className="field-info" tabIndex={0}>
+                    <span className="field-info-icon">i</span>
+                    <span className="field-tooltip">
+                      If the address isn't a well-known place, it may not resolve to a map location yet —
+                      map display for unmapped addresses isn't supported in the current build.
+                    </span>
+                  </span>
+                </div>
+                <input
+                  className="field-input"
+                  type="text"
+                  placeholder="Address (e.g. Alor Setar Tower, Alor Setar)"
+                  value={locationText}
+                  onChange={(e) => setLocationText(e.target.value)}
+                />
+              </div>
             )}
 
             {showMeetingLink && (
@@ -352,27 +360,9 @@ export default function InputForm({ onTaskAdded, onMeetingAdded }) {
             )}
 
             <div className="composer-row" style={{ marginTop: 10 }}>
-              <DatePicker value={startDate} onChange={setStartDate} resetSignal={resetSignal} />
-              <input
-                className="field-input"
-                type="time"
-                value={startTime}
-                onChange={(e) => setStartTime(e.target.value)}
-                style={{ width: 130 }}
-              />
-              <span className="panel-hint" style={{ alignSelf: 'center' }}>start</span>
-            </div>
-
-            <div className="composer-row" style={{ marginTop: 8 }}>
-              <DatePicker value={endDate} onChange={setEndDate} resetSignal={resetSignal} />
-              <input
-                className="field-input"
-                type="time"
-                value={endTime}
-                onChange={(e) => setEndTime(e.target.value)}
-                style={{ width: 130 }}
-              />
-              <span className="panel-hint" style={{ alignSelf: 'center' }}>end (optional)</span>
+              <DatePicker value={meetingDate} onChange={setMeetingDate} resetSignal={resetSignal} />
+              <TimePicker value={startTime} onChange={setStartTime} placeholder="Start time" />
+              <TimePicker value={endTime} onChange={setEndTime} placeholder="End time (optional)" />
             </div>
 
             <label style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 10, fontSize: 13 }}>

@@ -29,14 +29,14 @@ It ships with its own design system: a **glassmorphism UI**, full **dark/light t
 ### 🔐 Authentication
 
 <div align="center">
-<img src="assets/auth_darkmode.png" width="48%" alt="Sign in — Dark mode" />
-<img src="assets/auth_lightmode.png" width="48%" alt="Sign in — Light mode" />
+<img src="static/project_reference_images/auth_darkmode.png" width="48%" alt="Sign in — Dark mode" />
+<img src="static/project_reference_images/auth_lightmode.png" width="48%" alt="Sign in — Light mode" />
 </div>
 
 Secure sign-in with **Google OAuth 2.0**, email/password auth, and full dark/light theme parity.
 
 <div align="center">
-<img src="assets/otp.png" width="60%" alt="Email OTP verification" />
+<img src="static/project_reference_images/otp.png" width="60%" alt="Email OTP verification" />
 </div>
 
 Email verification handled through a **6-digit OTP flow**, with clear step-based UI.
@@ -46,11 +46,11 @@ Email verification handled through a **6-digit OTP flow**, with clear step-based
 ### 📊 Dashboard
 
 <div align="center">
-<img src="assets/dashboard_one.png" width="90%" alt="Dashboard — dark theme" />
+<img src="static/project_reference_images/dashboard_one.png" width="90%" alt="Dashboard — dark theme" />
 </div>
 
 <div align="center">
-<img src="assets/dashboard_two.png" width="90%" alt="Dashboard — light theme" />
+<img src="static/project_reference_images/dashboard_two.png" width="90%" alt="Dashboard — light theme" />
 </div>
 
 At-a-glance stats (pending, due today, completed, overdue), a live task-creation form, and a progress ring that updates in real time — themed identically in both dark and light mode.
@@ -60,20 +60,20 @@ At-a-glance stats (pending, due today, completed, overdue), a live task-creation
 ### 🗓️ Calendar
 
 <div align="center">
-<img src="assets/calendar.png" width="90%" alt="Calendar view" />
+<img src="static/project_reference_images/calendar.png" width="90%" alt="Calendar view" />
 </div>
 
 A full monthly calendar with an illustrated character guide + legend, making it easy to visually distinguish personal tasks, project tasks, and meetings at a glance.
 
 <div align="center">
-<img src="assets/calendar_task.png" width="48%" alt="Calendar — task detail" />
-<img src="assets/calendar_meeting.png" width="48%" alt="Calendar — meeting detail" />
+<img src="static/project_reference_images/calendar_task.png" width="48%" alt="Calendar — task detail" />
+<img src="static/project_reference_images//calendar_meeting.png" width="48%" alt="Calendar — meeting detail" />
 </div>
 
 Click into any day to see task or meeting details — including agenda items, steps, and location info — without leaving the calendar.
 
 <div align="center">
-<img src="assets/calendar_metadata.png" width="70%" alt="Calendar metadata panel" />
+<img src="static/project_reference_images/calendar_metadata.png" width="70%" alt="Calendar metadata panel" />
 </div>
 
 ---
@@ -81,8 +81,8 @@ Click into any day to see task or meeting details — including agenda items, st
 ### 📁 Project Creation
 
 <div align="center">
-<img src="assets/project_creation_one.png" width="48%" alt="Create project — step 1" />
-<img src="assets/project_creation_two.png" width="48%" alt="Create project — step 2" />
+<img src="static/project_reference_images/project_creation_one.png" width="48%" alt="Create project — step 1" />
+<img src="static/project_reference_images/project_creation_two.png" width="48%" alt="Create project — step 2" />
 </div>
 
 A guided, two-step flow for spinning up a new collaborative project — name, description, cover image, and team invites.
@@ -92,7 +92,7 @@ A guided, two-step flow for spinning up a new collaborative project — name, de
 ### 🔔 Notifications
 
 <div align="center">
-<img src="assets/notification.png" width="60%" alt="Notifications panel" />
+<img src="static/project_reference_images/notification.png" width="60%" alt="Notifications panel" />
 </div>
 
 A dedicated notification center with unread counts, mark-as-read, and mark-all-read — surfaced from a dropdown bell icon in the top nav.

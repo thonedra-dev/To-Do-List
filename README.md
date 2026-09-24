@@ -5,7 +5,7 @@
 
 <div align="center">
 
-<img src=".github/assets/hero.svg" alt="TaskFlow — Tasks, Meetings, Projects. One platform." width="100%" />
+<img src="static/svg_pics/hero.svg" alt="TaskFlow — Tasks, Meetings, Projects. One platform." width="100%" />
 
 <br/>
 
@@ -33,7 +33,7 @@
 
 </div>
 
-<img src=".github/assets/divider.svg" width="100%" alt="" />
+<img src="static/svg_pics/divider.svg" width="100%" alt="" />
 
 ## ✦ Overview
 
